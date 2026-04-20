@@ -1,0 +1,118 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Comprehensive user profile including physical metrics.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "fullName": { "type": "string" },
+        "age": { "type": "string" },
+        "gender": { "type": "string" },
+        "height": { "type": "string" },
+        "weight": { "type": "string" },
+        "role": { "type": "string" },
+        "lastLogin": { "type": "string", "format": "date-time" },
+        "fcmToken": { "type": "string", "description": "Token for Firebase Cloud Messaging (Push Notifications)" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "VitalsLog": {
+      "title": "Vitals Log",
+      "description": "Point-in-time health metrics including heart rate, blood pressure, glucose, steps, and SpO2.",
+      "type": "object",
+      "properties": {
+        "heartRate": { "type": "number" },
+        "systolic": { "type": "number", "description": "Systolic Blood Pressure" },
+        "diastolic": { "type": "number", "description": "Diastolic Blood Pressure" },
+        "glucose": { "type": "number", "description": "Blood Glucose Level (mg/dL or mmol/L)" },
+        "steps": { "type": "number" },
+        "spo2": { "type": ["number", "null"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["heartRate", "createdAt"]
+    },
+    "HeartRateBreakdown": {
+      "title": "Heart Rate Breakdown",
+      "description": "Hourly heart rate aggregation data.",
+      "type": "object",
+      "properties": {
+        "heartRate": { "type": "number" },
+        "hour": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["heartRate", "hour", "date"]
+    },
+    "AIInsight": {
+      "title": "AI Insight",
+      "description": "High-risk AI generated health insights and advice.",
+      "type": "object",
+      "properties": {
+        "heartRate": { "type": "number" },
+        "risk": { "type": "string" },
+        "summary": { "type": "string" },
+        "advice": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["heartRate", "risk", "summary", "advice", "date"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Alerts and health notifications for the user.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["info", "warning", "emergency"] },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "message", "type", "createdAt"]
+    },
+    "FamilyLink": {
+      "title": "Family Link",
+      "description": "Establish a connection between a user (patient) and a family member (caregiver).",
+      "type": "object",
+      "properties": {
+        "memberUid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "relation": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "active"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["memberUid", "email", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile with biometric data."
+    },
+    "/users/{userId}/heart_rate_logs/{logId}": {
+      "schema": "VitalsLog",
+      "description": "Historical vital signs data points for granular tracking including heart rate, BP, and glucose."
+    },
+    "/users/{userId}/heart_rate_breakdown/{breakdownId}": {
+      "schema": "HeartRateBreakdown",
+      "description": "Aggregated hourly heart rate data for dashboard analysis."
+    },
+    "/users/{userId}/ai_insights/{insightId}": {
+      "schema": "AIInsight",
+      "description": "Critical AI-generated health warnings and tailored advice."
+    },
+    "/users/{userId}/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "Time-sensitive alerts regarding health anomalies or system updates."
+    },
+    "/users/{userId}/family_links/{linkId}": {
+      "schema": "FamilyLink",
+      "description": "Trusted family members who receive emergency notifications."
+    }
+  }
+}

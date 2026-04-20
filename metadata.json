@@ -1,0 +1,6 @@
+{
+  "name": "VitaLife Health Dashboard",
+  "description": "A companion web dashboard for VitaLife Assistant, providing advanced health analytics, heart rate trends, AI-driven risk history, and caregiver monitoring features.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": []
+}

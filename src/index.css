@@ -1,0 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  
+  --color-minimal-bg: #F8F9FA;
+  --color-minimal-white: #FFFFFF;
+  --color-minimal-ink: #1D1D1F;
+  --color-minimal-muted: #86868B;
+  --color-minimal-border: #E5E5E7;
+  
+  --color-vital-50: #E7ECFF;
+  --color-vital-100: #D8E1FF;
+  --color-vital-200: #BBD0FF;
+  --color-vital-300: #A8BCFB;
+  --color-vital-400: #7EA0EA;
+  
+  --color-minimal-green: #34C759;
+  --color-minimal-blue: #7EA0EA;
+  --color-minimal-blue-dark: #3F5FB0;
+  --color-minimal-orange: #FF9500;
+  
+  --shadow-minimal: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+@layer base {
+  body {
+    @apply bg-minimal-bg text-minimal-ink font-sans antialiased selection:bg-vital-200/40;
+  }
+}
+
+.glass-panel {
+  @apply bg-minimal-white border border-minimal-border rounded-[20px] shadow-minimal;
+}
+
+.ai-gradient-low {
+  @apply bg-linear-to-br from-minimal-green to-[#2db550] text-white;
+}
+
+.ai-gradient-medium {
+  @apply bg-linear-to-br from-minimal-blue to-vital-300 text-white;
+}
+
+.ai-gradient-care {
+  @apply bg-linear-to-br from-minimal-orange to-[#e68600] text-white;
+}
+
+.ai-gradient-high {
+  @apply bg-linear-to-br from-red-500 to-[#d63031] text-white;
+}
+
+.ai-gradient {
+  @apply bg-linear-to-br from-vital-400 to-vital-300 text-white;
+}
+
+.vital-button {
+  @apply bg-minimal-ink text-white px-6 py-2 rounded-xl font-medium transition-all active:scale-[0.98] hover:opacity-90;
+}
+
+.risk-low { @apply text-minimal-green; }
+.risk-moderate { @apply text-vital-300; }
+.risk-high { @apply text-minimal-orange; }
+.risk-critical { @apply text-red-500 font-bold; }

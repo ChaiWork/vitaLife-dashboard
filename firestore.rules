@@ -1,0 +1,140 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required)
+    //   - displayName: string
+    //   - role: string (enum: 'user', 'admin', 'caregiver')
+    //   - createdAt: timestamp
+    //
+    // Collection: health_summaries
+    // Document ID: auto-generated
+    // Fields:
+    //   - uid: string (required)
+    //   - date: string (required)
+    //   - avgHeartRate: number
+    //   - avgSpo2: number
+    //   - steps: number
+    //   - status: string
+    //
+    // Collection: risk_history
+    // Document ID: auto-generated
+    // Fields:
+    //   - uid: string (required)
+    //   - date: string (required)
+    //   - riskLevel: string
+    //   - summary: string
+    //   - advice: string
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && resource != null && request.auth.uid == resource.data.uid;
+    }
+
+    function isIncomingDocOwner() {
+      return isAuthenticated() && request.resource.data != null && request.auth.uid == request.resource.data.uid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (request.auth.token.email == "pchairispum@gmail.com");
+    }
+
+    function isCaregiver() {
+      return false; // Temporarily disabled for debugging
+    }
+
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    }
+
+    function uidNotModified() {
+      return request.resource.data.uid == resource.data.uid;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+             data.uid is string &&
+             data.email is string;
+    }
+
+    function isValidHeartRateLog(data) {
+      return (data.get('heartRate', 0) is number || 
+              data.get('heart_rate_logs', 0) is number) &&
+             (data.get('createdAt', null) != null);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    // Allow test connection
+    match /test/connection {
+      allow read: if true;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if (isOwner(userId) && isValidUser(request.resource.data)) || isAdmin();
+
+      match /heart_rate_logs/{logId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isValidHeartRateLog(request.resource.data);
+        allow update, delete: if isOwner(userId) || isAdmin();
+      }
+
+      match /heart_rate_breakdown/{breakdownId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow write: if isOwner(userId) || isAdmin();
+      }
+
+      match /ai_insights/{insightId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow write: if isOwner(userId) || isAdmin();
+      }
+
+      match /notifications/{notificationId} {
+        allow read: if isOwner(userId) || isAdmin();
+        // Allow writing notifications if the target user (caretaker) has linked the current user (patient)
+        allow write: if isOwner(userId) || isAdmin() || 
+          exists(/databases/$(database)/documents/users/$(userId)/family_links/$(request.auth.uid));
+      }
+
+      match /family_links/{linkId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create, update: if isOwner(userId) || isAdmin();
+        // Allow deletion if you are the owner of the record OR if you are the person the link is referring to (the linked member)
+        allow delete: if isOwner(userId) || isAdmin() || (isSignedIn() && linkId == request.auth.uid);
+      }
+    }
+
+    match /risk_history/{riskId} {
+      allow read: if (isAuthenticated() && resource.data.uid == request.auth.uid) || isAdmin();
+      allow create: if isIncomingDocOwner();
+      allow update: if isDocOwner() && uidNotModified();
+      allow delete: if isAdmin();
+    }
+  }
+}
