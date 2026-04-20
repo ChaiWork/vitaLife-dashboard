@@ -1,41 +1,38 @@
-import { GoogleGenAI } from "@google/genai";
+import { httpsCallable } from "firebase/functions";
+import { functions } from "../lib/firebase";
 import { UserProfile } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
-export async function generateAIAnalysis(vitals: {
+export interface AIAnalysisRequest {
   heartRate: number | null;
   systolic?: number;
   diastolic?: number;
   glucose?: number;
   spo2?: number | null;
-}, profile: UserProfile | null) {
-  const vitalsText = `
-    Current Heart Rate: ${vitals.heartRate || 'N/A'} BPM
-    Blood Pressure: ${vitals.systolic || 'N/A'}/${vitals.diastolic || 'N/A'} mmHg
-    Blood Glucose: ${vitals.glucose || 'N/A'} mg/dL
-    SpO2: ${vitals.spo2 || 'N/A'}%
-    Patient Age: ${profile?.age || 'N/A'} years old
-    Weight: ${profile?.weight || 'N/A'} kg
-    Height: ${profile?.height || 'N/A'} cm
-  `;
+}
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: `Analyze these vital signs for a patient and provide a health assessment. If any values are critical (e.g. BP > 180/120, HR > 130 or < 40, Glucose > 250 or < 50), mark risk as 'Critical'. Otherwise if abnormal mark as 'Moderate' or 'High'. If normal, mark as 'Low'.
-    
-    Vitals: ${vitalsText}
-    
-    Return exactly in JSON format:
-    {
-      "risk": "Low" | "Moderate" | "High" | "Critical",
-      "summary": "one or two sentences summarizing the current health state",
-      "advice": "one specific actionable piece of health advice"
-    }`,
-    config: {
-      responseMimeType: "application/json"
-    }
+export interface AIAnalysisResponse {
+  risk: "Low" | "Moderate" | "High" | "Critical";
+  summary: string;
+  advice: string;
+}
+
+/**
+ * Calls the 'chronicAnalysis' Firebase Callable Function to perform AI-driven health assessment.
+ * This migration ensures secure backend processing instead of direct client-side LLM calls.
+ */
+export async function generateAIAnalysis(vitals: AIAnalysisRequest, profile: UserProfile | null): Promise<AIAnalysisResponse> {
+  const fn = httpsCallable(functions, "chronicAnalysis");
+  
+  const result = await fn({
+    systolic: vitals.systolic,
+    diastolic: vitals.diastolic,
+    glucose: vitals.glucose,
+    heartRate: vitals.heartRate,
+    spo2: vitals.spo2,
+    age: profile?.age,
+    weight: profile?.weight,
+    height: profile?.height
   });
-
-  return JSON.parse(response.text.trim());
+  
+  return result.data as AIAnalysisResponse;
 }

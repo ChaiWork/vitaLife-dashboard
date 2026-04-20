@@ -56,12 +56,13 @@ export function useHealthData(user: AuthUser | null) {
       collection(db, 'users', user.uid, 'heart_rate_breakdown'),
       where('date', '>=', startOfDay),
       orderBy('date', 'desc'),
-      orderBy('hour', 'asc'),
       limit(24)
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const logs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as HeartRateBreakdown));
-      setBreakdownLogs(logs);
+      // Sort client-side by hour to ensure chronological breakdown display without requiring a composite index
+      const sortedLogs = [...logs].sort((a, b) => a.hour - b.hour);
+      setBreakdownLogs(sortedLogs);
     });
     return () => unsubscribe();
   }, [user]);
