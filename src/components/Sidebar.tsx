@@ -11,7 +11,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLog
   return (
     <aside className="w-64 bg-minimal-white border-r border-minimal-border flex flex-col p-8 hidden md:flex">
       <div className="mb-12 flex items-center gap-2">
-        <img src="/logo.png" alt="VitaLife Logo" className="h-24 w-auto object-contain" referrerPolicy="no-referrer" />
+        <span className="text-2xl font-bold bg-gradient-to-r from-minimal-blue to-blue-600 bg-clip-text text-transparent">
+          VitaLife
+        </span>
       </div>
 
       <nav className="flex-1 space-y-1">

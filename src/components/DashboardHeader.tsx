@@ -6,6 +6,7 @@ interface DashboardHeaderProps {
   user: AuthUser;
   isSyncing: boolean;
   isAnalyzing: boolean;
+  lastAnalysisTime: Date | null;
   notifications: Notification[];
   onToggleNotifications: () => void;
   onRunAI: () => void;
@@ -18,6 +19,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   user,
   isSyncing,
   isAnalyzing,
+  lastAnalysisTime,
   notifications,
   onToggleNotifications,
   onRunAI,
@@ -27,13 +29,35 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 }) => {
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  const [timeAgo, setTimeAgo] = React.useState<string>('');
+
+  React.useEffect(() => {
+    if (!lastAnalysisTime) return;
+    const update = () => {
+      const diff = Math.floor((new Date().getTime() - lastAnalysisTime.getTime()) / 1000);
+      if (diff < 60) setTimeAgo(`${diff}s ago`);
+      else setTimeAgo(`${Math.floor(diff / 60)}m ago`);
+    };
+    update();
+    const interval = setInterval(update, 10000);
+    return () => clearInterval(interval);
+  }, [lastAnalysisTime]);
+
   return (
     <header className="flex justify-between items-end mb-10">
       <div>
         <h1 className="text-3xl font-semibold tracking-tight text-minimal-ink">Health Dashboard</h1>
-        <div className="flex items-center gap-2 text-minimal-muted mt-1 text-sm">
-          <div className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-minimal-blue animate-pulse' : 'bg-minimal-green'}`} />
-          {isSyncing ? 'Syncing Cloud Vault...' : 'Direct Cloud Sync Active'}
+        <div className="flex flex-col gap-1 mt-1">
+          <div className="flex items-center gap-2 text-minimal-muted text-sm">
+            <div className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-minimal-blue animate-pulse' : 'bg-minimal-green'}`} />
+            {isSyncing ? 'Syncing Cloud Vault...' : 'Direct Cloud Sync Active'}
+          </div>
+          {lastAnalysisTime && (
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-minimal-blue animate-in fade-in slide-in-from-top-1">
+              <Activity size={10} />
+              AI Automatically analyzing vitals... (Last: {timeAgo})
+            </div>
+          )}
         </div>
       </div>
       <div className="flex items-center gap-4">

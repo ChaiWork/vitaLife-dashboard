@@ -3,12 +3,17 @@ import { User } from 'firebase/auth';
 export interface HeartRateLog {
   id: string;
   heartRate: number;
-  systolic?: number;
-  diastolic?: number;
-  glucose?: number;
   steps?: number;
-  spo2?: number | null;
   createdAt: any; // Firebase Timestamp or ISO string
+}
+
+export interface ChronicVitalLog {
+  id: string;
+  systolic: number;
+  diastolic: number;
+  glucose: number;
+  spo2: number;
+  createdAt: any;
 }
 
 export interface HeartRateBreakdown {

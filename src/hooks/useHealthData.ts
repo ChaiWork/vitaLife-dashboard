@@ -10,6 +10,7 @@ import {
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { 
   HeartRateLog, 
+  ChronicVitalLog,
   HeartRateBreakdown, 
   AIInsight, 
   Notification, 
@@ -20,6 +21,7 @@ import {
 
 export function useHealthData(user: AuthUser | null) {
   const [heartLogs, setHeartLogs] = useState<HeartRateLog[]>([]);
+  const [chronicLogs, setChronicLogs] = useState<ChronicVitalLog[]>([]);
   const [breakdownLogs, setBreakdownLogs] = useState<HeartRateBreakdown[]>([]);
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -67,6 +69,23 @@ export function useHealthData(user: AuthUser | null) {
     return () => unsubscribe();
   }, [user]);
 
+  // Listen for Chronic Vital Logs
+  useEffect(() => {
+    if (!user) return;
+    const q = query(
+      collection(db, 'users', user.uid, 'chronicVital_log'),
+      orderBy('createdAt', 'desc'),
+      limit(500)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const logs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ChronicVitalLog));
+      setChronicLogs(logs);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, `users/${user.uid}/chronicVital_log`);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
   // Listen for AI Insights
   useEffect(() => {
     if (!user) return;
@@ -103,7 +122,7 @@ export function useHealthData(user: AuthUser | null) {
   // Listen for Risk History
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, 'risk_history'), where('uid', '==', user.uid), orderBy('date', 'desc'), limit(10));
+    const q = query(collection(db, 'risk_history'), where('uid', '==', user.uid), orderBy('date', 'desc'), limit(50));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as RiskEntry));
       setRiskHistory(data);
@@ -113,6 +132,7 @@ export function useHealthData(user: AuthUser | null) {
 
   return {
     heartLogs,
+    chronicLogs,
     breakdownLogs,
     aiInsights,
     notifications,

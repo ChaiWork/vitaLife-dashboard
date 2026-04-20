@@ -47,6 +47,7 @@ export default function App() {
   const { user, profile, loading } = useAuth();
   const {
     heartLogs,
+    chronicLogs,
     breakdownLogs,
     aiInsights,
     notifications,
@@ -58,6 +59,7 @@ export default function App() {
   const [chartView, setChartView] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [isSyncing, setIsSyncing] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [lastAnalysisTime, setLastAnalysisTime] = useState<Date | null>(null);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [showNoDataPopup, setShowNoDataPopup] = useState(false);
   const [isAddingMember, setIsAddingMember] = useState(false);
@@ -83,36 +85,51 @@ export default function App() {
   const todayStats = useMemo(() => {
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const latestToday = heartLogs.find(log => {
+    
+    const latestHeart = heartLogs.find(log => {
+      const logDate = log.createdAt?.toDate ? log.createdAt.toDate() : new Date(log.createdAt);
+      return logDate >= startOfDay;
+    });
+
+    const latestChronic = chronicLogs.find(log => {
       const logDate = log.createdAt?.toDate ? log.createdAt.toDate() : new Date(log.createdAt);
       return logDate >= startOfDay;
     });
 
     return {
-      heartRate: latestToday ? latestToday.heartRate : null,
-      systolic: latestToday ? latestToday.systolic : undefined,
-      diastolic: latestToday ? latestToday.diastolic : undefined,
-      glucose: latestToday ? latestToday.glucose : undefined,
-      steps: (latestToday && latestToday.steps !== undefined) ? latestToday.steps : 0,
-      hasDataToday: !!latestToday
+      heartRate: latestHeart ? latestHeart.heartRate : null,
+      systolic: latestChronic ? latestChronic.systolic : undefined,
+      diastolic: latestChronic ? latestChronic.diastolic : undefined,
+      glucose: latestChronic ? latestChronic.glucose : undefined,
+      spo2: latestChronic ? latestChronic.spo2 : undefined,
+      steps: (latestHeart && latestHeart.steps !== undefined) ? latestHeart.steps : 0,
+      hasDataToday: !!latestHeart || !!latestChronic
     };
-  }, [heartLogs]);
+  }, [heartLogs, chronicLogs]);
+
+  // Auto AI Trigger (Agentic AI Simulation)
+  useEffect(() => {
+    if (!user || isAnalyzing || isChronicAnalyzing) return;
+    
+    // Trigger analysis if there's new data and it's been more than 5 minutes or no previous analysis
+    const now = new Date().getTime();
+    const last = lastAnalysisTime ? lastAnalysisTime.getTime() : 0;
+    
+    if (todayStats.hasDataToday && (now - last > 300000)) {
+      generateHeartAnalysis();
+      generateChronicAnalysis();
+    }
+  }, [todayStats.hasDataToday, user]);
 
   const dailyBreakdown = useMemo(() => {
-    // Initialize 24 buckets to ensure all hours are represented
     const buckets: Record<number, { hr: number[], sys: number[], dia: number[], glu: number[] }> = {};
     for (let i = 0; i < 24; i++) buckets[i] = { hr: [], sys: [], dia: [], glu: [] };
 
-    // 1. Incorporate data from breakdownLogs (hourly averages from sync)
     breakdownLogs.forEach(b => {
       const h = b.hour;
-      if (b.heartRate !== null && b.heartRate !== undefined) buckets[h].hr.push(b.heartRate);
-      if (b.systolic !== null && b.systolic !== undefined) buckets[h].sys.push(b.systolic);
-      if (b.diastolic !== null && b.diastolic !== undefined) buckets[h].dia.push(b.diastolic);
-      if (b.glucose !== null && b.glucose !== undefined) buckets[h].glu.push(b.glucose);
+      if (b.heartRate) buckets[h].hr.push(b.heartRate);
     });
 
-    // 2. Incorporate raw manual logs for real-time updates
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -120,14 +137,20 @@ export default function App() {
       const logDate = log.createdAt?.toDate ? log.createdAt.toDate() : new Date(log.createdAt);
       if (logDate >= startOfDay) {
         const hour = logDate.getHours();
-        if (log.heartRate !== null && log.heartRate !== undefined) buckets[hour].hr.push(log.heartRate);
-        if (log.systolic !== null && log.systolic !== undefined) buckets[hour].sys.push(log.systolic);
-        if (log.diastolic !== null && log.diastolic !== undefined) buckets[hour].dia.push(log.diastolic);
-        if (log.glucose !== null && log.glucose !== undefined) buckets[hour].glu.push(log.glucose);
+        if (log.heartRate) buckets[hour].hr.push(log.heartRate);
       }
     });
 
-    // 3. Compute the final average for each hour
+    chronicLogs.forEach(log => {
+      const logDate = log.createdAt?.toDate ? log.createdAt.toDate() : new Date(log.createdAt);
+      if (logDate >= startOfDay) {
+        const hour = logDate.getHours();
+        if (log.systolic) buckets[hour].sys.push(log.systolic);
+        if (log.diastolic) buckets[hour].dia.push(log.diastolic);
+        if (log.glucose) buckets[hour].glu.push(log.glucose);
+      }
+    });
+
     return Array.from({ length: 24 }, (_, hour) => {
       const b = buckets[hour];
       return { 
@@ -138,7 +161,7 @@ export default function App() {
         glucose: b.glu.length > 0 ? Math.round(b.glu.reduce((a, b) => a + b) / b.glu.length) : null
       };
     });
-  }, [heartLogs, breakdownLogs]);
+  }, [heartLogs, chronicLogs, breakdownLogs]);
 
   const periodicTrends = useMemo(() => {
     const now = new Date();
@@ -156,16 +179,23 @@ export default function App() {
         let label = days === 7 ? weekDayShort[d.getDay()] : (i === 0 ? '-30d' : (i === 14 ? '-15d' : (i === days-1 ? 'Today' : '')));
         results.push({ key, label });
       }
+
       heartLogs.forEach(log => {
         const logDate = log.createdAt?.toDate ? log.createdAt.toDate() : new Date(log.createdAt);
         const key = new Date(logDate.getFullYear(), logDate.getMonth(), logDate.getDate()).toDateString();
+        if (breakdown[key] && log.heartRate) breakdown[key].hr.push(log.heartRate);
+      });
+
+      chronicLogs.forEach(log => {
+        const logDate = log.createdAt?.toDate ? log.createdAt.toDate() : new Date(log.createdAt);
+        const key = new Date(logDate.getFullYear(), logDate.getMonth(), logDate.getDate()).toDateString();
         if (breakdown[key]) {
-          if (log.heartRate !== null && log.heartRate !== undefined) breakdown[key].hr.push(log.heartRate);
-          if (log.systolic !== null && log.systolic !== undefined) breakdown[key].sys.push(log.systolic);
-          if (log.diastolic !== null && log.diastolic !== undefined) breakdown[key].dia.push(log.diastolic);
-          if (log.glucose !== null && log.glucose !== undefined) breakdown[key].glu.push(log.glucose);
+          if (log.systolic) breakdown[key].sys.push(log.systolic);
+          if (log.diastolic) breakdown[key].dia.push(log.diastolic);
+          if (log.glucose) breakdown[key].glu.push(log.glucose);
         }
       });
+
       return results.map(r => {
         const b = breakdown[r.key];
         return { 
@@ -178,7 +208,7 @@ export default function App() {
       });
     };
     return { weekly: getDailyAverages(7), monthly: getDailyAverages(30) };
-  }, [heartLogs]);
+  }, [heartLogs, chronicLogs]);
 
   const unifiedHistory = useMemo(() => {
     const historicalEntries = riskHistory.map(entry => ({
@@ -315,7 +345,10 @@ export default function App() {
         });
       }
     } catch (e) { console.error('AI Analysis failed:', e); }
-    finally { setIsAnalyzing(false); }
+    finally { 
+      setIsAnalyzing(false);
+      setLastAnalysisTime(new Date());
+    }
   };
 
   const generateChronicAnalysis = async () => {
@@ -327,7 +360,7 @@ export default function App() {
         systolic: todayStats.systolic,
         diastolic: todayStats.diastolic,
         glucose: todayStats.glucose,
-        spo2: heartLogs[0]?.spo2
+        spo2: todayStats.spo2 || 98
       };
       
       const result = await callGeminiAnalysis(vitals, profile);
@@ -373,24 +406,35 @@ export default function App() {
       };
       setChronicAnalysis(fallback);
     }
-    finally { setIsChronicAnalyzing(false); }
+    finally { 
+      setIsChronicAnalyzing(false);
+      setLastAnalysisTime(new Date());
+    }
   };
 
   const simulateHeartRate = async () => {
     if (!user) return;
     try {
-      const logRef = doc(collection(db, 'users', user.uid, 'heart_rate_logs'));
+      const hrBatch = doc(collection(db, 'users', user.uid, 'heart_rate_logs'));
+      const chronicBatch = doc(collection(db, 'users', user.uid, 'chronicVital_log'));
+      
       const rand = Math.random();
-      let hrValue = rand > 0.9 ? 140 : (rand > 0.85 ? 35 : (rand > 0.8 ? 120 : (rand > 0.7 ? 105 : 72)));
-      await setDoc(logRef, {
-        heartRate: hrValue,
-        systolic: Math.floor(Math.random() * 40) + 110,
-        diastolic: Math.floor(Math.random() * 20) + 70,
-        glucose: Math.floor(Math.random() * 50) + 80,
-        steps: Math.floor(Math.random() * 10000),
-        spo2: 98,
-        createdAt: serverTimestamp()
-      });
+      let hrValue = rand > 0.9 ? 140 : (rand > 0.85 ? 35 : (rand > 0.7 ? 105 : 72));
+      
+      await Promise.all([
+        setDoc(hrBatch, {
+          heartRate: hrValue,
+          steps: Math.floor(Math.random() * 10000),
+          createdAt: serverTimestamp()
+        }),
+        setDoc(chronicBatch, {
+          systolic: Math.floor(Math.random() * 40) + 110,
+          diastolic: Math.floor(Math.random() * 20) + 70,
+          glucose: Math.floor(Math.random() * 50) + 80,
+          spo2: Math.floor(Math.random() * 3) + 96,
+          createdAt: serverTimestamp()
+        })
+      ]);
     } catch (e) { console.error(e); }
   };
 
@@ -398,12 +442,12 @@ export default function App() {
     if (!user) return;
     try {
       setIsSyncing(true);
-      const logRef = doc(collection(db, 'users', user.uid, 'heart_rate_logs'));
+      const logRef = doc(collection(db, 'users', user.uid, 'chronicVital_log'));
       await setDoc(logRef, {
-        systolic: manualVitals.systolic ? Number(manualVitals.systolic) : null,
-        diastolic: manualVitals.diastolic ? Number(manualVitals.diastolic) : null,
-        glucose: manualVitals.glucose ? Number(manualVitals.glucose) : null,
-        spo2: manualVitals.spo2 ? Number(manualVitals.spo2) : null,
+        systolic: manualVitals.systolic ? Number(manualVitals.systolic) : 120,
+        diastolic: manualVitals.diastolic ? Number(manualVitals.diastolic) : 80,
+        glucose: manualVitals.glucose ? Number(manualVitals.glucose) : 95,
+        spo2: manualVitals.spo2 ? Number(manualVitals.spo2) : 98,
         createdAt: serverTimestamp()
       });
       setIsManualEntryOpen(false);
@@ -500,6 +544,7 @@ export default function App() {
             user={user}
             isSyncing={isSyncing}
             isAnalyzing={isAnalyzing}
+            lastAnalysisTime={lastAnalysisTime}
             notifications={notifications}
             onToggleNotifications={() => setIsNotificationOpen(!isNotificationOpen)}
             onRunAI={generateHeartAnalysis}
