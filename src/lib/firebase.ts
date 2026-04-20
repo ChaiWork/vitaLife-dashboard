@@ -29,13 +29,11 @@ import {
   Timestamp,
   serverTimestamp
 } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 import firebaseConfig from '../../firebase-applet-config.json';
 
-export const app = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
-export const functions = getFunctions(app, 'us-central1');
 export const googleProvider = new GoogleAuthProvider();
 
 // Utility for operation types
@@ -123,7 +121,6 @@ export {
   getDocs,
   getDocsFromServer,
   Timestamp,
-  serverTimestamp,
-  httpsCallable
+  serverTimestamp
 };
 export type { User };

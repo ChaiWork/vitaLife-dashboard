@@ -1,7 +1,4 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
+import { User } from 'firebase/auth';
 
 export interface HeartRateLog {
   id: string;
@@ -47,26 +44,9 @@ export interface RiskEntry {
 export interface AIInsight {
   id: string;
   heartRate: number;
-  systolic?: number;
-  diastolic?: number;
-  glucose?: number;
   risk: string;
   summary: string;
   advice: string;
-  explanation?: string;
-  // Separate sections for split cards
-  hrAnalysis?: {
-    risk: string;
-    summary: string;
-    advice: string;
-    explanation?: string;
-  };
-  bpGlucoseAnalysis?: {
-    risk: string;
-    summary: string;
-    advice: string;
-    explanation?: string;
-  };
   date: any;
   createdAt: any;
 }
@@ -90,5 +70,4 @@ export interface Notification {
   createdAt: any;
 }
 
-export type ChartView = 'daily' | 'weekly' | 'monthly';
-export type Tab = 'dashboard' | 'history' | 'profile';
+export type AuthUser = User;

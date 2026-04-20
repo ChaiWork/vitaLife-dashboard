@@ -1,11 +1,6 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React from 'react';
 import { motion } from 'motion/react';
-import { Users, Plus, Trash2, ShieldCheck } from 'lucide-react';
+import { Activity, Plus } from 'lucide-react';
 import { UserProfile, FamilyLink } from '../types';
 
 interface ProfileTabProps {
@@ -14,187 +9,164 @@ interface ProfileTabProps {
   isAddingMember: boolean;
   setIsAddingMember: (val: boolean) => void;
   newMemberEmail: string;
-  setNewMemberEmail: (val: string) => void;
-  familyLinkStatus: { type: 'success' | 'error', message: string } | null;
-  setFamilyLinkStatus: (val: any) => void;
-  deletingMemberId: string | null;
-  setDeletingMemberId: (val: string | null) => void;
+  setNewMemberEmail: (email: string) => void;
   onAddMember: (email: string) => void;
-  onRemoveMember: (uid: string) => void;
-  onUpdateProfile: (data: any) => void;
+  familyLinkStatus: { type: 'success' | 'error', message: string } | null;
+  setFamilyLinkStatus: (status: any) => void;
 }
 
-export function ProfileTab({
+export const ProfileTab: React.FC<ProfileTabProps> = ({
   profile,
   familyLinks,
   isAddingMember,
   setIsAddingMember,
   newMemberEmail,
   setNewMemberEmail,
-  familyLinkStatus,
-  setFamilyLinkStatus,
-  deletingMemberId,
-  setDeletingMemberId,
   onAddMember,
-  onRemoveMember,
-  onUpdateProfile
-}: ProfileTabProps) {
+  familyLinkStatus,
+  setFamilyLinkStatus
+}) => {
   return (
     <motion.div
       key="profile"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="max-w-3xl mx-auto space-y-8"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-6"
     >
-      {/* Biometrics Card */}
-      <div className="glass-panel p-8 rounded-[40px] shadow-sm border-minimal-border">
-        <h2 className="text-xl font-bold mb-8 text-minimal-ink flex items-center gap-2">
-          <ShieldCheck size={24} className="text-minimal-ink" />
-          Clinical Biometrics
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ProfileField label="Full Name" value={profile?.fullName || profile?.displayName || '--'} />
-          <ProfileField label="Email Address" value={profile?.email || '--'} />
-          <ProfileField label="Age" value={profile?.age || '--'} suffix="years" />
-          <ProfileField label="Gender" value={profile?.gender || '--'} />
-          <ProfileField label="Height" value={profile?.height || '--'} suffix="cm" />
-          <ProfileField label="Weight" value={profile?.weight || '--'} suffix="kg" />
-        </div>
-      </div>
-
-      {/* Family Circle */}
-      <div className="glass-panel p-8 rounded-[40px] shadow-sm border-minimal-border">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-xl font-bold text-minimal-ink flex items-center gap-2">
-              <Users size={24} />
-              Caregiver Network
-            </h2>
-            <p className="text-[10px] text-minimal-muted uppercase tracking-wider font-bold mt-1">Shared Clinical Safety</p>
+      <h3 className="text-xl font-semibold mb-6">User Biometrics</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="glass-panel p-8 rounded-3xl space-y-4">
+          <div className="flex justify-between border-b border-minimal-border pb-4">
+            <span className="text-minimal-muted">Full Name</span>
+            <span className="font-semibold">{profile?.fullName || '--'}</span>
           </div>
-          {!isAddingMember && (
-            <button 
-              onClick={() => setIsAddingMember(true)}
-              className="px-3 py-1.5 bg-minimal-ink text-white rounded-lg text-xs font-bold flex items-center gap-2 hover:opacity-90 transition-all"
-            >
-              <Plus size={14} /> Add Member
-            </button>
-          )}
+          <div className="flex justify-between border-b border-minimal-border pb-4">
+            <span className="text-minimal-muted">Gender</span>
+            <span className="font-semibold capitalize">{profile?.gender || '--'}</span>
+          </div>
+          <div className="flex justify-between border-b border-minimal-border pb-4">
+            <span className="text-minimal-muted">Age</span>
+            <span className="font-semibold">{profile?.age || '--'} years old</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-minimal-muted">Role</span>
+            <span className="font-semibold uppercase text-xs tracking-widest">{profile?.role || 'user'}</span>
+          </div>
         </div>
         
-        {isAddingMember && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-minimal-bg p-4 rounded-2xl border border-minimal-border space-y-3 mb-6"
-          >
-            <p className="text-[10px] font-bold uppercase tracking-widest text-minimal-muted">Enter family member's email</p>
-            <div className="flex gap-2">
-              <input 
-                type="email" 
-                value={newMemberEmail}
-                onChange={(e) => setNewMemberEmail(e.target.value)}
-                placeholder="family@example.com"
-                className="flex-1 px-3 py-2 bg-white border border-minimal-border rounded-xl text-xs outline-none focus:ring-2 focus:ring-minimal-blue/20"
-              />
-              <button 
-                onClick={() => onAddMember(newMemberEmail)}
-                className="px-4 py-2 bg-minimal-ink text-white rounded-xl text-xs font-bold hover:opacity-90 active:scale-95 transition-all"
-              >
-                Link
-              </button>
-              <button 
-                onClick={() => {
-                  setIsAddingMember(false);
-                  setFamilyLinkStatus(null);
-                }}
-                className="px-4 py-2 bg-white border border-minimal-border text-minimal-muted rounded-xl text-xs font-bold hover:bg-minimal-bg transition-all"
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
-        )}
-
-        {familyLinkStatus && (
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`p-3 rounded-xl text-[11px] font-medium border mb-6 ${
-              familyLinkStatus.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'
-            }`}
-          >
-            {familyLinkStatus.message}
-          </motion.div>
-        )}
+        <div className="glass-panel p-8 rounded-3xl space-y-4">
+          <div className="flex justify-between border-b border-minimal-border pb-4">
+            <span className="text-minimal-muted">Height</span>
+            <span className="font-semibold">{profile?.height || '--'} cm</span>
+          </div>
+          <div className="flex justify-between border-b border-minimal-border pb-4">
+            <span className="text-minimal-muted">Weight</span>
+            <span className="font-semibold">{profile?.weight || '--'} kg</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-minimal-muted">BMI</span>
+            <span className="font-semibold">
+              {profile?.height && profile?.weight 
+                ? (Number(profile.weight) / ((Number(profile.height)/100)**2)).toFixed(1) 
+                : '--'}
+            </span>
+          </div>
+        </div>
         
-        <p className="text-xs text-minimal-muted leading-relaxed mb-6">
-          Add family members here. They will receive critical heart rate alerts and emergency notifications if your health metrics reach dangerous levels.
-        </p>
+        <div className="glass-panel p-8 rounded-3xl space-y-6">
+          <h3 className="font-semibold text-lg">VitaLife Assistant</h3>
+          <div className="p-4 bg-minimal-bg border border-minimal-border rounded-2xl flex items-start gap-3">
+            <div className="p-2 bg-minimal-blue/10 rounded-lg text-minimal-blue">
+              <Activity size={20} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-minimal-ink mb-1">App Integration Active</p>
+              <p className="text-[11px] text-minimal-muted leading-relaxed">
+                Your biometric data and emergency alerts are synced in real-time with the VitaLife Assistant mobile app. Push notifications will be delivered to your phone during critical health events.
+              </p>
+            </div>
+          </div>
+        </div>
 
-        <div className="space-y-3">
-          {familyLinks.length > 0 ? familyLinks.map(link => (
-            <div key={link.id} className="flex items-center justify-between p-3 bg-minimal-bg rounded-xl border border-minimal-border">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-vital-100 flex items-center justify-center text-vital-500 font-bold text-xs">
-                  {link.displayName ? link.displayName[0] : 'U'}
-                </div>
+        <div className="glass-panel p-8 rounded-3xl space-y-6">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="font-semibold text-lg">Family Circle {familyLinks.length > 0 && `(${familyLinks.length})`}</h3>
+            {!isAddingMember && (
+              <button 
+                onClick={() => setIsAddingMember(true)}
+                className="px-3 py-1.5 bg-minimal-ink text-white rounded-lg text-xs font-bold flex items-center gap-2 hover:opacity-90 transition-all"
+              >
+                <Plus size={14} /> Add Member
+              </button>
+            )}
+          </div>
+          
+          {isAddingMember && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-minimal-bg p-4 rounded-2xl border border-minimal-border space-y-3"
+            >
+              <p className="text-[10px] font-bold uppercase tracking-widest text-minimal-muted">Enter family member's email</p>
+              <div className="flex gap-2">
+                <input 
+                  type="email" 
+                  value={newMemberEmail}
+                  onChange={(e) => setNewMemberEmail(e.target.value)}
+                  placeholder="family@example.com"
+                  className="flex-1 px-3 py-2 bg-white border border-minimal-border rounded-xl text-xs outline-none focus:ring-2 focus:ring-minimal-blue/20"
+                />
+                <button 
+                  onClick={() => onAddMember(newMemberEmail)}
+                  className="px-4 py-2 bg-minimal-ink text-white rounded-xl text-xs font-bold hover:opacity-90 active:scale-95 transition-all"
+                >
+                  Link
+                </button>
+                <button 
+                  onClick={() => {
+                    setIsAddingMember(false);
+                    setFamilyLinkStatus(null);
+                  }}
+                  className="px-4 py-2 bg-white border border-minimal-border text-minimal-muted rounded-xl text-xs font-bold hover:bg-minimal-bg transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {familyLinkStatus && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`p-3 rounded-xl text-[11px] font-medium border ${
+                familyLinkStatus.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'
+              }`}
+            >
+              {familyLinkStatus.message}
+            </motion.div>
+          )}
+          
+          <p className="text-xs text-minimal-muted leading-relaxed">
+            Add family members here. They will receive critical heart rate alerts and emergency notifications if your health metrics reach dangerous levels.
+          </p>
+
+          <div className="space-y-3">
+            {familyLinks.map(link => (
+              <div key={link.id} className="flex justify-between items-center p-3 border border-minimal-border rounded-xl bg-white">
                 <div>
-                  <p className="text-sm font-semibold text-minimal-ink">{link.displayName || 'Unknown Member'}</p>
+                  <p className="text-xs font-bold text-minimal-ink">{link.displayName}</p>
                   <p className="text-[10px] text-minimal-muted">{link.email}</p>
                 </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-minimal-blue bg-white px-2 py-0.5 rounded border border-minimal-border shadow-sm">
-                  {link.status}
+                <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-minimal-blue/10 text-minimal-blue rounded">
+                  {link.relation}
                 </span>
-                {deletingMemberId === link.memberUid ? (
-                  <div className="flex gap-1 animate-in fade-in slide-in-from-right-2 duration-300">
-                    <button 
-                      onClick={() => onRemoveMember(link.memberUid)}
-                      className="px-2 py-1 bg-red-500 text-white text-[9px] font-bold rounded-lg hover:bg-red-600 transition-all shadow-sm"
-                    >
-                      Confirm
-                    </button>
-                    <button 
-                      onClick={() => setDeletingMemberId(null)}
-                      className="px-2 py-1 bg-white border border-minimal-border text-minimal-muted text-[9px] font-bold rounded-lg hover:bg-minimal-bg transition-all"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <button 
-                    onClick={() => setDeletingMemberId(link.memberUid)}
-                    className="p-1.5 text-minimal-muted hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                    title="Remove Member"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                )}
               </div>
-            </div>
-          )) : (
-            <div className="py-8 text-center text-minimal-muted border-2 border-dashed border-minimal-border rounded-2xl">
-              <Users size={24} className="mx-auto mb-2 opacity-20" />
-              <p className="text-xs italic">No family members linked yet.</p>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
       </div>
     </motion.div>
   );
-}
-
-function ProfileField({ label, value, suffix }: { label: string, value: string, suffix?: string }) {
-  return (
-    <div className="space-y-1.5">
-      <p className="text-[10px] uppercase font-bold text-minimal-muted tracking-widest ml-1">{label}</p>
-      <div className="bg-minimal-bg p-4 rounded-2xl border border-minimal-border">
-        <p className="text-sm font-semibold text-minimal-ink">{value} {value !== '--' ? suffix : ''}</p>
-      </div>
-    </div>
-  );
-}
+};

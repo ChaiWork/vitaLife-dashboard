@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Heart } from 'lucide-react';
@@ -12,9 +7,9 @@ import {
   signInWithPopup, 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword 
-} from '../lib/firebase';
+} from '../../lib/firebase';
 
-export function LoginPage() {
+export const LoginPage: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -70,7 +65,7 @@ export function LoginPage() {
         animate={{ opacity: 1, y: 0 }}
         className="glass-panel p-8 md:p-12 rounded-[40px] max-w-md w-full text-center relative z-10"
       >
-        <div className="w-16 h-16 bg-vital-400 text-white rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-vital-400/20">
+        <div className="w-16 h-16 bg-minimal-blue text-white rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-minimal-blue/20">
           <Heart size={32} fill="currentColor" />
         </div>
         <h1 className="text-3xl font-bold mb-2 tracking-tight text-minimal-ink">VitaLife Assistant</h1>
@@ -140,4 +135,4 @@ export function LoginPage() {
       </motion.div>
     </div>
   );
-}
+};

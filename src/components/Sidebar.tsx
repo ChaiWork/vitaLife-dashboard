@@ -1,27 +1,15 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React from 'react';
-import { 
-  LayoutDashboard, 
-  Users, 
-  History, 
-  LogOut 
-} from 'lucide-react';
-import { NavButton } from './NavButton';
-import { Tab } from '../types';
+import { LayoutDashboard, Users, History, LogOut } from 'lucide-react';
 
 interface SidebarProps {
-  activeTab: Tab;
-  setActiveTab: (tab: Tab) => void;
+  activeTab: string;
+  setActiveTab: (tab: any) => void;
   onLogout: () => void;
 }
 
-export function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarProps) {
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLogout }) => {
   return (
-    <aside className="w-64 bg-minimal-white border-r border-minimal-border flex flex-col p-8 hidden md:flex h-screen sticky top-0">
+    <aside className="w-64 bg-minimal-white border-r border-minimal-border flex flex-col p-8 hidden md:flex">
       <div className="mb-12">
         <span className="font-bold text-xl tracking-tight text-minimal-blue">VitaLife Assistant</span>
       </div>
@@ -49,11 +37,32 @@ export function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarProps) {
 
       <button 
         onClick={onLogout}
-        className="flex items-center gap-3 text-minimal-muted hover:text-minimal-ink transition-colors pt-6 border-t border-minimal-border group"
+        className="flex items-center gap-3 text-minimal-muted hover:text-minimal-ink transition-colors pt-6 border-t border-minimal-border"
       >
-        <LogOut size={18} className="group-hover:translate-x-1 transition-transform" />
-        <span className="font-medium text-sm">Sign Out</span>
+        <LogOut size={18} />
+        <span>Sign Out</span>
       </button>
     </aside>
   );
+};
+
+interface NavButtonProps {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
 }
+
+const NavButton: React.FC<NavButtonProps> = ({ active, onClick, icon, label }) => (
+  <button 
+    onClick={onClick}
+    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+      active 
+        ? 'bg-minimal-blue/5 text-minimal-blue' 
+        : 'text-minimal-muted hover:bg-minimal-bg'
+    }`}
+  >
+    {icon}
+    <span>{label}</span>
+  </button>
+);
