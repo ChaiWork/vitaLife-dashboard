@@ -1,5 +1,6 @@
-import React from 'react';
-import { LayoutDashboard, Users, History, LogOut } from 'lucide-react';
+import React from "react";
+import { LayoutDashboard, Users, History, LogOut } from "lucide-react";
+const logo = require("../images/logo.png");
 
 interface SidebarProps {
   activeTab: string;
@@ -7,35 +8,44 @@ interface SidebarProps {
   onLogout: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLogout }) => {
+export const Sidebar: React.FC<SidebarProps> = ({
+  activeTab,
+  setActiveTab,
+  onLogout,
+}) => {
   return (
     <aside className="w-64 bg-minimal-white border-r border-minimal-border flex flex-col p-8 hidden md:flex">
       <div className="mb-12 flex items-center gap-2">
-        <img src="/logo.png" alt="VitaLife Logo" className="h-24 w-auto object-contain" referrerPolicy="no-referrer" />
+        <img
+          src={logo}
+          alt="VitaLife Logo"
+          className="h-24 w-auto object-contain"
+          referrerPolicy="no-referrer"
+        />
       </div>
 
       <nav className="flex-1 space-y-1">
-        <NavButton 
-          active={activeTab === 'dashboard'} 
-          onClick={() => setActiveTab('dashboard')} 
+        <NavButton
+          active={activeTab === "dashboard"}
+          onClick={() => setActiveTab("dashboard")}
           icon={<LayoutDashboard size={18} />}
           label="Overview"
         />
-        <NavButton 
-          active={activeTab === 'profile'} 
-          onClick={() => setActiveTab('profile')} 
+        <NavButton
+          active={activeTab === "profile"}
+          onClick={() => setActiveTab("profile")}
           icon={<Users size={18} />}
           label="Biometrics"
         />
-        <NavButton 
-          active={activeTab === 'history'} 
-          onClick={() => setActiveTab('history')} 
+        <NavButton
+          active={activeTab === "history"}
+          onClick={() => setActiveTab("history")}
           icon={<History size={18} />}
           label="Risk History"
         />
       </nav>
 
-      <button 
+      <button
         onClick={onLogout}
         className="flex items-center gap-3 text-minimal-muted hover:text-minimal-ink transition-colors pt-6 border-t border-minimal-border"
       >
@@ -53,13 +63,18 @@ interface NavButtonProps {
   label: string;
 }
 
-const NavButton: React.FC<NavButtonProps> = ({ active, onClick, icon, label }) => (
-  <button 
+const NavButton: React.FC<NavButtonProps> = ({
+  active,
+  onClick,
+  icon,
+  label,
+}) => (
+  <button
     onClick={onClick}
     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-      active 
-        ? 'bg-minimal-blue/5 text-minimal-blue' 
-        : 'text-minimal-muted hover:bg-minimal-bg'
+      active
+        ? "bg-minimal-blue/5 text-minimal-blue"
+        : "text-minimal-muted hover:bg-minimal-bg"
     }`}
   >
     {icon}
