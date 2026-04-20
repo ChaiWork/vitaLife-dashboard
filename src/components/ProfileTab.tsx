@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Activity, Plus, Trash2 } from 'lucide-react';
+import { Activity, Plus, Trash2, Edit2, Save, X } from 'lucide-react';
 import { UserProfile, FamilyLink } from '../types';
 
 interface ProfileTabProps {
@@ -14,6 +14,7 @@ interface ProfileTabProps {
   onRemoveMember: (id: string) => void;
   familyLinkStatus: { type: 'success' | 'error', message: string } | null;
   setFamilyLinkStatus: (status: any) => void;
+  onUpdateProfile: (updates: Partial<UserProfile>) => void;
 }
 
 export const ProfileTab: React.FC<ProfileTabProps> = ({
@@ -26,8 +27,29 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
   onAddMember,
   onRemoveMember,
   familyLinkStatus,
-  setFamilyLinkStatus
+  setFamilyLinkStatus,
+  onUpdateProfile
 }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState<Partial<UserProfile>>({});
+
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        fullName: profile.fullName || '',
+        gender: profile.gender || '',
+        age: profile.age || '',
+        height: profile.height || '',
+        weight: profile.weight || '',
+      });
+    }
+  }, [profile, isEditing]);
+
+  const handleSave = () => {
+    onUpdateProfile(formData);
+    setIsEditing(false);
+  };
+
   return (
     <motion.div
       key="profile"
@@ -36,37 +58,124 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
       exit={{ opacity: 0, x: -20 }}
       className="space-y-6"
     >
-      <h3 className="text-xl font-semibold mb-6">User Biometrics</h3>
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-xl font-semibold">User Biometrics</h3>
+        {!isEditing ? (
+          <button 
+            onClick={() => setIsEditing(true)}
+            className="flex items-center gap-2 px-4 py-2 border border-minimal-border rounded-xl text-xs font-bold text-minimal-muted hover:bg-white transition-all shadow-sm"
+          >
+            <Edit2 size={14} />
+            Edit Profile
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <button 
+              onClick={handleSave}
+              className="flex items-center gap-2 px-4 py-2 bg-minimal-ink text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all shadow-sm"
+            >
+              <Save size={14} />
+              Save
+            </button>
+            <button 
+              onClick={() => setIsEditing(false)}
+              className="flex items-center gap-2 px-4 py-2 border border-minimal-border rounded-xl text-xs font-bold text-minimal-muted hover:bg-white transition-all shadow-sm"
+            >
+              <X size={14} />
+              Cancel
+            </button>
+          </div>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="glass-panel p-8 rounded-3xl space-y-4">
-          <div className="flex justify-between border-b border-minimal-border pb-4">
+          <div className="flex justify-between border-b border-minimal-border pb-4 items-center min-h-[48px]">
             <span className="text-minimal-muted">Full Name</span>
-            <span className="font-semibold">{profile?.fullName || '--'}</span>
+            {isEditing ? (
+              <input 
+                type="text" 
+                value={formData.fullName} 
+                onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                className="bg-minimal-bg px-3 py-1.5 rounded-lg text-sm font-bold text-right outline-none focus:ring-2 focus:ring-minimal-blue/20"
+              />
+            ) : (
+              <span className="font-semibold">{profile?.fullName || '--'}</span>
+            )}
           </div>
-          <div className="flex justify-between border-b border-minimal-border pb-4">
+          <div className="flex justify-between border-b border-minimal-border pb-4 items-center min-h-[48px]">
             <span className="text-minimal-muted">Gender</span>
-            <span className="font-semibold capitalize">{profile?.gender || '--'}</span>
+            {isEditing ? (
+              <select 
+                value={formData.gender} 
+                onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                className="bg-minimal-bg px-3 py-1.5 rounded-lg text-sm font-bold text-right outline-none focus:ring-2 focus:ring-minimal-blue/20"
+              >
+                <option value="">Select</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+            ) : (
+              <span className="font-semibold capitalize">{profile?.gender || '--'}</span>
+            )}
           </div>
-          <div className="flex justify-between border-b border-minimal-border pb-4">
+          <div className="flex justify-between border-b border-minimal-border pb-4 items-center min-h-[48px]">
             <span className="text-minimal-muted">Age</span>
-            <span className="font-semibold">{profile?.age || '--'} years old</span>
+            {isEditing ? (
+              <div className="flex items-center gap-2">
+                <input 
+                  type="number" 
+                  value={formData.age} 
+                  onChange={(e) => setFormData({...formData, age: e.target.value})}
+                  className="bg-minimal-bg px-3 py-1.5 rounded-lg text-sm font-bold text-right outline-none w-20 focus:ring-2 focus:ring-minimal-blue/20"
+                />
+                <span className="text-xs text-minimal-muted font-bold">yrs</span>
+              </div>
+            ) : (
+              <span className="font-semibold">{profile?.age || '--'} years old</span>
+            )}
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center min-h-[48px]">
             <span className="text-minimal-muted">Role</span>
             <span className="font-semibold uppercase text-xs tracking-widest">{profile?.role || 'user'}</span>
           </div>
         </div>
         
         <div className="glass-panel p-8 rounded-3xl space-y-4">
-          <div className="flex justify-between border-b border-minimal-border pb-4">
+          <div className="flex justify-between border-b border-minimal-border pb-4 items-center min-h-[48px]">
             <span className="text-minimal-muted">Height</span>
-            <span className="font-semibold">{profile?.height || '--'} cm</span>
+            {isEditing ? (
+              <div className="flex items-center gap-2">
+                <input 
+                  type="number" 
+                  value={formData.height} 
+                  onChange={(e) => setFormData({...formData, height: e.target.value})}
+                  className="bg-minimal-bg px-3 py-1.5 rounded-lg text-sm font-bold text-right outline-none w-20 focus:ring-2 focus:ring-minimal-blue/20"
+                />
+                <span className="text-xs text-minimal-muted font-bold">cm</span>
+              </div>
+            ) : (
+              <span className="font-semibold">{profile?.height || '--'} cm</span>
+            )}
           </div>
-          <div className="flex justify-between border-b border-minimal-border pb-4">
+          <div className="flex justify-between border-b border-minimal-border pb-4 items-center min-h-[48px]">
             <span className="text-minimal-muted">Weight</span>
-            <span className="font-semibold">{profile?.weight || '--'} kg</span>
+            {isEditing ? (
+              <div className="flex items-center gap-2">
+                <input 
+                  type="number" 
+                  value={formData.weight} 
+                  onChange={(e) => setFormData({...formData, weight: e.target.value})}
+                  className="bg-minimal-bg px-3 py-1.5 rounded-lg text-sm font-bold text-right outline-none w-20 focus:ring-2 focus:ring-minimal-blue/20"
+                />
+                <span className="text-xs text-minimal-muted font-bold">kg</span>
+              </div>
+            ) : (
+              <span className="font-semibold">{profile?.weight || '--'} kg</span>
+            )}
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center min-h-[48px]">
             <span className="text-minimal-muted">BMI</span>
             <span className="font-semibold">
               {profile?.height && profile?.weight 

@@ -32,7 +32,18 @@
 }
 
 .glass-panel {
-  @apply bg-minimal-white border border-minimal-border rounded-[20px] shadow-minimal;
+  @apply bg-minimal-white border border-minimal-border rounded-[20px] shadow-minimal transition-colors;
+}
+
+.dark .glass-panel {
+  @apply bg-[#121212] border-white/5 shadow-none;
+}
+
+.dark {
+  --color-minimal-bg: #050505;
+  --color-minimal-ink: #FFFFFF;
+  --color-minimal-muted: #8E8E93;
+  --color-minimal-border: #1C1C1E;
 }
 
 .ai-gradient-low {

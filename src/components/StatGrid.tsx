@@ -58,7 +58,7 @@ export const StatGrid: React.FC<StatGridProps> = ({ todayStats, profile }) => {
         />
         <StatCard 
           label="Age" 
-          value={profile?.age ? `${profile.age} yrs` : '--'} 
+          value={profile?.age ? `${profile.age} years old` : '--'} 
           unit=""
         />
       </div>

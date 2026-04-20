@@ -37,11 +37,14 @@ import { NoDataModal } from './components/NoDataModal';
 import { LoginPage } from './components/Auth/LoginPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChronicAIAnalysis } from './components/ChronicAIAnalysis';
+import { CaregiverView } from './components/CaregiverView';
+import { SettingsTab } from './components/SettingsTab';
 
 // Hooks & Services
 import { useAuth } from './hooks/useAuth';
 import { useHealthData } from './hooks/useHealthData';
 import { generateAIAnalysis as callGeminiAnalysis } from './services/geminiService';
+import { UserProfile } from './types';
 
 export default function App() {
   const { user, profile, loading } = useAuth();
@@ -55,11 +58,14 @@ export default function App() {
     riskHistory
   } = useHealthData(user);
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'profile'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'profile' | 'caregiver' | 'settings'>('dashboard');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [chartView, setChartView] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [isSyncing, setIsSyncing] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [lastAnalysisTime, setLastAnalysisTime] = useState<Date | null>(null);
+  const [heartAnalysis, setHeartAnalysis] = useState<{ risk: "Low" | "Moderate" | "High" | "Critical", summary: string, advice: string } | null>(null);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [showNoDataPopup, setShowNoDataPopup] = useState(false);
   const [isAddingMember, setIsAddingMember] = useState(false);
@@ -96,6 +102,10 @@ export default function App() {
       return logDate >= startOfDay;
     });
 
+    const lastLog = heartLogs[0];
+    const lastLogTime = lastLog?.createdAt?.toDate ? lastLog.createdAt.toDate().getTime() : (lastLog ? new Date(lastLog.createdAt).getTime() : 0);
+    const isInactive = lastLogTime > 0 && (Date.now() - lastLogTime > 7200000); // 2 hours
+
     return {
       heartRate: latestHeart ? latestHeart.heartRate : null,
       systolic: latestChronic ? latestChronic.systolic : undefined,
@@ -103,7 +113,8 @@ export default function App() {
       glucose: latestChronic ? latestChronic.glucose : undefined,
       spo2: latestChronic ? latestChronic.spo2 : undefined,
       steps: (latestHeart && latestHeart.steps !== undefined) ? latestHeart.steps : 0,
-      hasDataToday: !!latestHeart || !!latestChronic
+      hasDataToday: !!latestHeart || !!latestChronic,
+      isInactive
     };
   }, [heartLogs, chronicLogs]);
 
@@ -306,6 +317,14 @@ export default function App() {
       };
       
       const result = await callGeminiAnalysis(vitals, profile);
+      
+      if (vitals.heartRate && vitals.heartRate < 40) {
+        result.risk = 'Critical';
+        result.summary = `Emergency: Heart rate at ${vitals.heartRate} BPM is critically low (bradycardia). This requires immediate medical attention.`;
+        result.advice = 'Contact emergency services or go to the nearest ER immediately. Do not drive yourself.';
+      }
+
+      setHeartAnalysis(result);
       
       // Save to Insights
       const insightRef = doc(collection(db, 'users', user.uid, 'ai_insights'));
@@ -515,6 +534,23 @@ export default function App() {
     } catch (e) { console.error(e); }
   };
 
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!user) return;
+    try {
+      await setDoc(doc(db, 'users', user.uid, 'profile', 'data'), updates, { merge: true });
+    } catch (e) {
+      console.error('Update profile failed:', e);
+    }
+  };
+
+  const getFontSizeClass = () => {
+    switch (fontSize) {
+      case 'small': return 'text-xs';
+      case 'large': return 'text-lg leading-relaxed';
+      default: return 'text-base';
+    }
+  };
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-minimal-bg">
       <div className="w-8 h-8 border-2 border-minimal-blue border-t-transparent rounded-full animate-spin" />
@@ -525,16 +561,22 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen flex bg-minimal-bg">
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
+      <div className={`min-h-screen flex transition-colors duration-300 ${theme === 'dark' ? 'dark bg-[#050505] text-white' : 'bg-minimal-bg text-minimal-ink'} ${getFontSizeClass()}`}>
+        <Sidebar 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab} 
+          onLogout={handleLogout} 
+          theme={theme}
+          setTheme={setTheme}
+        />
 
         <main className="flex-1 overflow-y-auto p-4 md:p-12 max-w-6xl mx-auto relative">
           <AnimatePresence>
             {isSyncing && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-minimal-bg/60 backdrop-blur-sm flex items-center justify-center pointer-events-none">
-                <div className="glass-panel p-8 rounded-3xl flex flex-col items-center gap-4">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className={`absolute inset-0 z-50 backdrop-blur-sm flex items-center justify-center pointer-events-none ${theme === 'dark' ? 'bg-black/60' : 'bg-minimal-bg/60'}`}>
+                <div className={`glass-panel p-8 rounded-3xl flex flex-col items-center gap-4 ${theme === 'dark' ? 'bg-[#121212] border-white/5' : ''}`}>
                   <div className="w-10 h-10 border-4 border-minimal-blue border-t-transparent rounded-full animate-spin" />
-                  <p className="text-sm font-semibold text-minimal-ink">Syncing Cloud Vault...</p>
+                  <p className={`text-sm font-semibold ${theme === 'dark' ? 'text-white' : 'text-minimal-ink'}`}>Syncing Cloud Vault...</p>
                 </div>
               </motion.div>
             )}
@@ -544,6 +586,7 @@ export default function App() {
             user={user}
             isSyncing={isSyncing}
             isAnalyzing={isAnalyzing}
+            isInactive={todayStats.isInactive}
             lastAnalysisTime={lastAnalysisTime}
             notifications={notifications}
             onToggleNotifications={() => setIsNotificationOpen(!isNotificationOpen)}
@@ -569,9 +612,9 @@ export default function App() {
               <motion.div key="dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-8">
                 <StatGrid todayStats={todayStats} profile={profile} />
                 <AIRiskHighlight 
-                  latestRisk={aiInsights[0]?.risk || riskHistory[0]?.riskLevel || 'Low'}
-                  summary={aiInsights[0]?.summary || riskHistory[0]?.summary || 'Normal overview.'}
-                  advice={aiInsights[0]?.advice || riskHistory[0]?.advice || ''}
+                  latestRisk={heartAnalysis?.risk || aiInsights[0]?.risk || riskHistory[0]?.riskLevel || 'Normal'}
+                  summary={heartAnalysis?.summary || aiInsights[0]?.summary || riskHistory[0]?.summary || 'Need sync from an app for it to work.'}
+                  advice={heartAnalysis?.advice || aiInsights[0]?.advice || riskHistory[0]?.advice || ''}
                   isAnalyzing={isAnalyzing}
                   onFindClinic={findNearestClinic}
                 />
@@ -588,6 +631,13 @@ export default function App() {
               </motion.div>
             )}
 
+            {activeTab === 'caregiver' && (
+              <CaregiverView 
+                familyLinks={familyLinks} 
+                onAddMember={() => setActiveTab('profile')} 
+              />
+            )}
+
             {activeTab === 'history' && <HistoryTab history={unifiedHistory} />}
 
             {activeTab === 'profile' && (
@@ -602,6 +652,16 @@ export default function App() {
                 onRemoveMember={(id) => deleteDoc(doc(db, 'users', user.uid, 'family_links', id))}
                 familyLinkStatus={familyLinkStatus}
                 setFamilyLinkStatus={setFamilyLinkStatus}
+                onUpdateProfile={updateProfile}
+              />
+            )}
+
+            {activeTab === 'settings' && (
+              <SettingsTab 
+                theme={theme}
+                setTheme={setTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
               />
             )}
           </AnimatePresence>

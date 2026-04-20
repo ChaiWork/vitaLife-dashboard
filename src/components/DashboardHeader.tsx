@@ -1,11 +1,12 @@
 import React from 'react';
-import { Bell, Activity, Plus, RefreshCw } from 'lucide-react';
+import { Bell, Activity, Plus, RefreshCw, AlertTriangle } from 'lucide-react';
 import { AuthUser, Notification } from '../types';
 
 interface DashboardHeaderProps {
   user: AuthUser;
   isSyncing: boolean;
   isAnalyzing: boolean;
+  isInactive?: boolean;
   lastAnalysisTime: Date | null;
   notifications: Notification[];
   onToggleNotifications: () => void;
@@ -19,6 +20,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   user,
   isSyncing,
   isAnalyzing,
+  isInactive,
   lastAnalysisTime,
   notifications,
   onToggleNotifications,
@@ -51,6 +53,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <div className="flex items-center gap-2 text-minimal-muted text-sm">
             <div className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-minimal-blue animate-pulse' : 'bg-minimal-green'}`} />
             {isSyncing ? 'Syncing Cloud Vault...' : 'Direct Cloud Sync Active'}
+            {isInactive && (
+              <span className="flex items-center gap-1.5 ml-2 text-red-500 font-bold text-xs animate-pulse">
+                <AlertTriangle size={14} />
+                No movement for 2 hours
+              </span>
+            )}
           </div>
           {lastAnalysisTime && (
             <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-minimal-blue animate-in fade-in slide-in-from-top-1">
