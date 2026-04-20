@@ -1,76 +1,93 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: "Poppins", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   
-  --color-minimal-bg: #F8F9FA;
+  --color-minimal-bg: #F0F4F8;
   --color-minimal-white: #FFFFFF;
-  --color-minimal-ink: #1D1D1F;
-  --color-minimal-muted: #86868B;
-  --color-minimal-border: #E5E5E7;
+  --color-minimal-ink: #101828;
+  --color-minimal-muted: #667085;
+  --color-minimal-border: #EAECF0;
   
-  --color-vital-50: #E7ECFF;
-  --color-vital-100: #D8E1FF;
-  --color-vital-200: #BBD0FF;
-  --color-vital-300: #A8BCFB;
-  --color-vital-400: #7EA0EA;
+  --color-vital-50: #F5FBFF;
+  --color-vital-100: #E0F2FE;
+  --color-vital-200: #BAE6FD;
+  --color-vital-300: #7DD3FC;
+  --color-vital-400: #38BDF8;
   
-  --color-minimal-green: #34C759;
-  --color-minimal-blue: #7EA0EA;
-  --color-minimal-blue-dark: #3F5FB0;
-  --color-minimal-orange: #FF9500;
+  --color-minimal-green: #10B981;
+  --color-minimal-blue: #0EA5E9;
+  --color-teal-soft: #2DD4BF;
+  --color-minimal-orange: #F59E0B;
   
-  --shadow-minimal: 0 4px 12px rgba(0,0,0,0.05);
+  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+  --shadow-neumorph-in: inset 2px 2px 5px rgba(0,0,0,0.05), inset -2px -2px 5px rgba(255,255,255,0.8);
+  --shadow-neumorph-out: 5px 5px 10px rgba(0,0,0,0.02), -5px -5px 10px rgba(255,255,255,0.8);
 }
 
 @layer base {
   body {
-    @apply bg-minimal-bg text-minimal-ink font-sans antialiased selection:bg-vital-200/40;
+    @apply bg-minimal-bg text-minimal-ink font-sans antialiased selection:bg-vital-200/40 transition-all duration-500;
   }
 }
 
 .glass-panel {
-  @apply bg-minimal-white border border-minimal-border rounded-[20px] shadow-minimal transition-colors;
+  @apply bg-white/70 backdrop-blur-xl border border-white/40 rounded-[28px] shadow-glass transition-all duration-300;
 }
 
 .dark .glass-panel {
-  @apply bg-[#121212] border-white/5 shadow-none;
+  @apply bg-black/40 backdrop-blur-xl border border-white/10 shadow-none;
 }
 
 .dark {
-  --color-minimal-bg: #050505;
-  --color-minimal-ink: #FFFFFF;
-  --color-minimal-muted: #8E8E93;
-  --color-minimal-border: #1C1C1E;
+  --color-minimal-bg: #0A0F1A;
+  --color-minimal-ink: #F9FAFB;
+  --color-minimal-muted: #98A2B3;
+  --color-minimal-border: #1F2937;
 }
 
-.ai-gradient-low {
-  @apply bg-linear-to-br from-minimal-green to-[#2db550] text-white;
+/* AI Glow & Pulse */
+.ai-pulse-danger {
+  animation: pulse-red 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.ai-gradient-medium {
-  @apply bg-linear-to-br from-minimal-blue to-vital-300 text-white;
+.ai-pulse-warning {
+  animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.ai-gradient-care {
-  @apply bg-linear-to-br from-minimal-orange to-[#e68600] text-white;
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
 }
 
-.ai-gradient-high {
-  @apply bg-linear-to-br from-red-500 to-[#d63031] text-white;
+@keyframes pulse-glow {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(245, 158, 11, 0.4)); }
+  50% { filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.8)); }
 }
 
-.ai-gradient {
-  @apply bg-linear-to-br from-vital-400 to-vital-300 text-white;
+/* ECG Animation */
+.ecg-line {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: ecg-draw 2s linear infinite;
 }
 
-.vital-button {
-  @apply bg-minimal-ink text-white px-6 py-2 rounded-xl font-medium transition-all active:scale-[0.98] hover:opacity-90;
+@keyframes ecg-draw {
+  to { stroke-dashoffset: 0; }
 }
 
-.risk-low { @apply text-minimal-green; }
-.risk-moderate { @apply text-vital-300; }
-.risk-high { @apply text-minimal-orange; }
-.risk-critical { @apply text-red-500 font-bold; }
+/* Neumorphic buttons */
+.neumorph-btn {
+  @apply border-none shadow-neumorph-out active:shadow-neumorph-in transition-all duration-200;
+}
+
+.ai-gradient-low { @apply bg-linear-to-br from-minimal-green to-teal-soft text-white; }
+.ai-gradient-medium { @apply bg-linear-to-br from-minimal-blue to-vital-300 text-white; }
+.ai-gradient-high { @apply bg-linear-to-br from-red-500 to-rose-600 text-white; }
+
+.risk-low { @apply text-minimal-green font-semibold; }
+.risk-moderate { @apply text-minimal-orange font-semibold; }
+.risk-high { @apply text-red-500 font-bold; }

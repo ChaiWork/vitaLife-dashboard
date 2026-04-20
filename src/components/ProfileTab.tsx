@@ -130,7 +130,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                   onChange={(e) => setFormData({...formData, age: e.target.value})}
                   className="bg-minimal-bg px-3 py-1.5 rounded-lg text-sm font-bold text-right outline-none w-20 focus:ring-2 focus:ring-minimal-blue/20"
                 />
-                <span className="text-xs text-minimal-muted font-bold">yrs</span>
+                <span className="text-xs text-minimal-muted font-bold">years old</span>
               </div>
             ) : (
               <span className="font-semibold">{profile?.age || '--'} years old</span>

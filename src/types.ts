@@ -13,6 +13,7 @@ export interface ChronicVitalLog {
   diastolic: number;
   glucose: number;
   spo2: number;
+  temperature?: number;
   createdAt: any;
 }
 

@@ -46,46 +46,60 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   }, [lastAnalysisTime]);
 
   return (
-    <header className="flex justify-between items-end mb-10">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-minimal-ink">Health Dashboard</h1>
-        <div className="flex flex-col gap-1 mt-1">
-          <div className="flex items-center gap-2 text-minimal-muted text-sm">
-            <div className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-minimal-blue animate-pulse' : 'bg-minimal-green'}`} />
-            {isSyncing ? 'Syncing Cloud Vault...' : 'Direct Cloud Sync Active'}
+    <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
+      <div className="flex-1">
+        <h1 className="text-4xl font-display font-bold tracking-tight text-minimal-ink mb-2">Health Command</h1>
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-3 text-minimal-muted text-sm font-medium">
+            <div className={`w-2.5 h-2.5 rounded-full ${isSyncing ? 'bg-minimal-blue animate-pulse' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'}`} />
+            {isSyncing ? 'Syncing Analytics...' : 'Secure Intelligent Sync Active'}
             {isInactive && (
-              <span className="flex items-center gap-1.5 ml-2 text-red-500 font-bold text-xs animate-pulse">
+              <span className="flex items-center gap-1.5 ml-4 text-rose-500 font-bold text-xs ai-pulse-danger px-3 py-1 bg-rose-500/10 rounded-full">
                 <AlertTriangle size={14} />
-                No movement for 2 hours
+                No Movement: 2 Hours
               </span>
             )}
           </div>
           {lastAnalysisTime && (
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-minimal-blue animate-in fade-in slide-in-from-top-1">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-black text-minimal-blue/80 animate-in fade-in slide-in-from-top-1">
               <Activity size={10} />
-              AI Automatically analyzing vitals... (Last: {timeAgo})
+              AI Sentinel: Active Analysis (Last: {timeAgo})
             </div>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-4">
+
+      <div className="flex items-center gap-3 flex-wrap justify-end">
+        {/* Emergency SOS Button */}
+        <button 
+          onClick={() => window.confirm('Trigger SOS Alert? This will notify your caregiver and local emergency services.')}
+          className="flex items-center gap-2 px-5 py-2.5 bg-rose-500 text-white rounded-2xl font-bold text-xs shadow-lg shadow-rose-500/30 hover:shadow-rose-500/50 transition-all hover:scale-105 active:scale-95 group"
+        >
+          <div className="w-2 h-2 bg-white rounded-full animate-ping" />
+          EMERGENCY SOS
+        </button>
+
+        <div className="h-8 w-[1px] bg-minimal-border mx-2 hidden lg:block" />
+
         <button 
           onClick={onRunAI}
           disabled={isAnalyzing}
-          className="hidden sm:flex items-center gap-2 px-4 py-2 bg-minimal-blue/10 border border-minimal-blue/20 rounded-xl text-xs font-bold text-minimal-blue hover:bg-minimal-blue/20 transition-all mr-2 disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2.5 glass-panel !bg-minimal-blue/5 !border-minimal-blue/20 rounded-2xl text-xs font-bold text-minimal-blue hover:!bg-minimal-blue/10 transition-all disabled:opacity-50"
         >
           {isAnalyzing ? (
             <div className="w-3 h-3 border-2 border-minimal-blue border-t-transparent rounded-full animate-spin" />
           ) : (
             <Activity size={14} />
           )}
-          Run AI Insight
+          Deep Insight
         </button>
+        
         <button 
           onClick={onRefresh}
-          className="hidden sm:flex items-center gap-2 px-4 py-2 border border-minimal-border rounded-xl text-xs font-medium text-minimal-muted hover:bg-minimal-white transition-all mr-2"
+          className="p-2.5 glass-panel !bg-transparent !border-minimal-border rounded-xl text-minimal-muted hover:!bg-white transition-all neumorph-btn"
+          title="Refresh Data"
         >
-          <RefreshCw size={14} /> Refresh
+          <RefreshCw size={18} />
         </button>
         <button 
           onClick={onManualLog}

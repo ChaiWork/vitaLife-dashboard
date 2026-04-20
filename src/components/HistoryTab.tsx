@@ -57,7 +57,11 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ history }) => {
           <div key={item.id} className="glass-panel p-6 rounded-3xl flex flex-col md:flex-row gap-6 items-start">
             <div className="md:w-40 shrink-0">
               <p className="text-xs font-bold text-minimal-muted uppercase tracking-widest mb-1">{item.source}</p>
-              <p className="text-sm font-semibold text-minimal-ink">{item.date}</p>
+              <p className="text-sm font-semibold text-minimal-ink">
+                {item.date.includes('T') && item.date.includes('Z') ? 
+                  new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) + ' ' + new Date(item.date).toLocaleDateString() : 
+                  item.date}
+              </p>
               <span className={`text-[10px] font-bold uppercase tracking-widest inline-block px-2 py-0.5 rounded mt-2 ${
                 item.risk.toLowerCase().includes('high') ? 'bg-red-50 text-red-600' :
                 item.risk.toLowerCase().includes('critical') || item.risk.toLowerCase().includes('danger') ? 'bg-red-600 text-white' :

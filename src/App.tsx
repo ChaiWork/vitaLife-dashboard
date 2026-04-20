@@ -347,13 +347,14 @@ export default function App() {
         riskLevel: result.risk,
         summary: result.summary,
         advice: result.advice,
-        date: new Date().toISOString(),
+        date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) + ' ' + new Date().toLocaleDateString(),
         vitals: vitals,
         source: 'Heart AI Analysis'
       });
 
       // Notifications for Moderate, High, Critical
-      if (result.risk === 'Moderate' || result.risk === 'High' || result.risk === 'Critical') {
+      if ((result.risk === 'Moderate' || result.risk === 'High' || result.risk === 'Critical') && 
+          !result.summary.toLowerCase().includes('error')) {
         const notifRef = doc(collection(db, 'users', user.uid, 'notifications'));
         await setDoc(notifRef, {
           title: `Heart AI Alert: ${result.risk} Risk`,
@@ -399,13 +400,14 @@ export default function App() {
         riskLevel: result.risk,
         summary: result.summary,
         advice: result.advice,
-        date: new Date().toISOString(),
+        date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) + ' ' + new Date().toLocaleDateString(),
         vitals: vitals,
         source: 'Chronic Vitals Analysis'
       });
 
       // Notifications for Moderate, High, Critical
-      if (result.risk === 'Moderate' || result.risk === 'High' || result.risk === 'Critical') {
+      if ((result.risk === 'Moderate' || result.risk === 'High' || result.risk === 'Critical') && 
+          !result.summary.toLowerCase().includes('error')) {
         const notifRef = doc(collection(db, 'users', user.uid, 'notifications'));
         await setDoc(notifRef, {
           title: `Metabolic AI Alert: ${result.risk} Risk`,

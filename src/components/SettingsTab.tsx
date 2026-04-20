@@ -80,11 +80,17 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ theme, setTheme, fontS
 
         {/* Accessibility Features */}
         <section className={`glass-panel p-8 rounded-[40px] space-y-6 ${theme === 'dark' ? 'bg-[#121212] border-white/5' : ''}`}>
-          <div className="flex items-center gap-3 mb-2">
-            <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
-              <Eye size={20} />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
+                <Eye size={20} />
+              </div>
+              <h3 className="text-lg font-bold">Accessibility</h3>
             </div>
-            <h3 className="text-lg font-bold">Accessibility</h3>
+            
+            <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${fontSize === 'large' ? 'bg-emerald-500 text-white' : 'bg-minimal-bg text-minimal-muted'}`}>
+              Elderly Mode: {fontSize === 'large' ? 'ON' : 'OFF'}
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -92,13 +98,16 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ theme, setTheme, fontS
               <div className="flex items-center gap-3">
                 <Shield size={18} className="text-minimal-muted" />
                 <div>
-                  <p className="text-sm font-bold">High Contrast</p>
-                  <p className="text-[10px] text-minimal-muted uppercase font-bold tracking-tight">Increase visual distinction</p>
+                  <p className="text-sm font-bold">Elderly Friendly Mode</p>
+                  <p className="text-[10px] text-minimal-muted uppercase font-bold tracking-tight">Large fonts & simple layout</p>
                 </div>
               </div>
-              <div className="w-12 h-6 bg-minimal-border rounded-full relative opacity-50 cursor-not-allowed">
-                <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-white" />
-              </div>
+              <button 
+                onClick={() => setFontSize(fontSize === 'large' ? 'medium' : 'large')}
+                className={`w-12 h-6 rounded-full relative transition-colors ${fontSize === 'large' ? 'bg-emerald-500' : 'bg-minimal-border'}`}
+              >
+                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${fontSize === 'large' ? 'left-7' : 'left-1'}`} />
+              </button>
             </div>
 
             <div className="flex items-center justify-between p-4 bg-minimal-bg rounded-2xl border border-minimal-border">

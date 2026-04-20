@@ -61,34 +61,34 @@ export const HealthCharts: React.FC<HealthChartsProps> = ({ chartView, setChartV
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4 relative z-10">
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <h3 className="font-bold text-xl tracking-tight text-minimal-ink">{getMetricLabel()}</h3>
-                <div className="flex gap-1 bg-minimal-bg p-1 rounded-xl border border-minimal-border">
+                <h3 className="font-display font-bold text-2xl tracking-tight text-minimal-ink">{getMetricLabel()}</h3>
+                <div className="flex gap-1 bg-minimal-bg/50 backdrop-blur-md p-1 rounded-xl border border-minimal-border transition-all">
                   {(['heartRate', 'bloodPressure', 'bloodGlucose'] as MetricType[]).map((m) => (
                     <button 
                       key={m}
                       onClick={() => setActiveMetric(m)}
-                      className={`px-3 py-1 text-[10px] font-black rounded-lg transition-all uppercase tracking-tighter ${activeMetric === m ? 'bg-white shadow-sm ring-1 ring-black/5 text-minimal-blue' : 'text-minimal-muted'}`}
+                      className={`px-3 py-1.5 text-[10px] font-black rounded-lg transition-all uppercase tracking-tighter ${activeMetric === m ? 'bg-white shadow-xl ring-1 ring-black/5 text-minimal-blue' : 'text-minimal-muted/60 hover:text-minimal-ink'}`}
                     >
                       {m === 'heartRate' ? 'HR' : m === 'bloodPressure' ? 'BP' : 'GLU'}
                     </button>
                   ))}
                 </div>
               </div>
-              <p className="text-xs font-medium text-minimal-muted">
-                {chartView === 'daily' ? '24-Hour Real-time Telemetry' : 
+              <p className="text-xs font-bold text-minimal-muted uppercase tracking-widest opacity-60 px-0.5">
+                {chartView === 'daily' ? '24-Hour Digital Telemetry' : 
                  chartView === 'weekly' ? '7-Day Aggregated Trend' : '30-Day Historical Baseline'}
               </p>
             </div>
             
-            <div className="flex bg-minimal-bg p-1 rounded-2xl border border-minimal-border">
+            <div className="flex bg-minimal-bg/50 backdrop-blur-md p-1 rounded-2xl border border-minimal-border">
               {(['daily', 'weekly', 'monthly'] as const).map((view) => (
                 <button
                   key={view}
                   onClick={() => setChartView(view)}
-                  className={`px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${
+                  className={`px-5 py-2 rounded-xl text-[10px] font-bold uppercase tracking-[0.1em] transition-all ${
                     chartView === view 
-                      ? 'bg-white text-minimal-ink shadow-sm ring-1 ring-black/5' 
-                      : 'text-minimal-muted hover:text-minimal-ink'
+                      ? 'bg-white text-minimal-ink shadow-lg ring-1 ring-black/5' 
+                      : 'text-minimal-muted/80 hover:text-minimal-ink'
                   }`}
                 >
                   {view}
@@ -97,90 +97,98 @@ export const HealthCharts: React.FC<HealthChartsProps> = ({ chartView, setChartV
             </div>
           </div>
 
-          <div className="flex-1 min-h-0 relative z-10">
+          <div className="flex-1 min-h-0 relative z-10 px-4">
             <ResponsiveContainer width="100%" height="100%">
               {activeMetric === 'bloodPressure' ? (
                 <LineChart data={data}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F1F3" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F1F3" vertical={false} opacity={0.3} />
                   <XAxis 
                     dataKey={chartView === 'daily' ? "hour" : "label"} 
                     stroke="#A1A1AA" 
-                    fontSize={11} 
+                    fontSize={10} 
+                    fontWeight={700}
                     tickLine={false} 
                     axisLine={false} 
                     interval={chartView === 'monthly' ? 0 : (chartView === 'daily' ? 3 : 0)}
-                    padding={{ left: 20, right: 20 }}
+                    padding={{ left: 10, right: 10 }}
                   />
                   <YAxis 
                     stroke="#A1A1AA" 
-                    fontSize={11} 
+                    fontSize={10} 
+                    fontWeight={700}
                     tickLine={false} 
                     axisLine={false} 
                     domain={[60, 180]}
                   />
                   <Tooltip 
-                    contentStyle={{ background: '#FFFFFF', border: 'none', borderRadius: '16px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
+                    contentStyle={{ background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.4)', borderRadius: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
+                    itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
                     formatter={(value: any, name: string) => [`${value} mmHg`, name === 'systolic' ? 'Systolic' : 'Diastolic']}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="systolic" 
                     stroke="#FF3B30" 
-                    strokeWidth={3}
-                    dot={{ r: 4, fill: '#FF3B30', strokeWidth: 2, stroke: '#fff' }}
-                    activeDot={{ r: 6, strokeWidth: 0 }}
+                    strokeWidth={4}
+                    dot={{ r: 4, fill: '#FF3B30', strokeWidth: 3, stroke: '#fff' }}
+                    activeDot={{ r: 8, strokeWidth: 0 }}
                     connectNulls={true}
+                    animationDuration={1500}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="diastolic" 
                     stroke="#007AFF" 
-                    strokeWidth={3}
-                    dot={{ r: 4, fill: '#007AFF', strokeWidth: 2, stroke: '#fff' }}
-                    activeDot={{ r: 6, strokeWidth: 0 }}
+                    strokeWidth={4}
+                    dot={{ r: 4, fill: '#007AFF', strokeWidth: 3, stroke: '#fff' }}
+                    activeDot={{ r: 8, strokeWidth: 0 }}
                     connectNulls={true}
+                    animationDuration={1500}
                   />
                 </LineChart>
               ) : (
                 <AreaChart data={data}>
                   <defs>
                     <linearGradient id="colorMetric" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={activeMetric === 'bloodGlucose' ? '#FF9F0A' : '#5856D6'} stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor={activeMetric === 'bloodGlucose' ? '#FF9F0A' : '#5856D6'} stopOpacity={0}/>
+                      <stop offset="5%" stopColor={activeMetric === 'bloodGlucose' ? '#FF9F0A' : '#0EA5E9'} stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor={activeMetric === 'bloodGlucose' ? '#FF9F0A' : '#0EA5E9'} stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F1F3" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F1F3" vertical={false} opacity={0.3} />
                   <XAxis 
                     dataKey={chartView === 'daily' ? "hour" : "label"} 
                     stroke="#A1A1AA" 
-                    fontSize={11} 
+                    fontSize={10}
+                    fontWeight={700}
                     tickLine={false} 
                     axisLine={false} 
                     interval={chartView === 'monthly' ? 0 : (chartView === 'daily' ? 3 : 0)}
-                    padding={{ left: 20, right: 20 }}
+                    padding={{ left: 10, right: 10 }}
                   />
                   <YAxis 
                     stroke="#A1A1AA" 
-                    fontSize={11} 
+                    fontSize={10} 
+                    fontWeight={700}
                     tickLine={false} 
                     axisLine={false} 
                     domain={activeMetric === 'bloodGlucose' ? [40, 200] : [40, 'auto']}
                   />
                   <Tooltip 
-                    contentStyle={{ background: '#FFFFFF', border: 'none', borderRadius: '16px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
-                    itemStyle={{ color: activeMetric === 'bloodGlucose' ? '#FF9F0A' : '#5856D6' }}
+                    contentStyle={{ background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.4)', borderRadius: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
+                    itemStyle={{ fontSize: '12px', fontWeight: 'bold', color: activeMetric === 'bloodGlucose' ? '#FF9F0A' : '#0EA5E9' }}
                     formatter={(value: any) => [value ? `${value} ${getUnit()}` : '--', getMetricLabel()]}
                   />
                   <Area 
                     type="monotone" 
                     dataKey={activeMetric === 'heartRate' ? 'heartRate' : 'glucose'} 
-                    stroke={activeMetric === 'bloodGlucose' ? '#FF9F0A' : '#5856D6'} 
-                    strokeWidth={3}
+                    stroke={activeMetric === 'bloodGlucose' ? '#FF9F0A' : '#0EA5E9'} 
+                    strokeWidth={4}
                     fillOpacity={1} 
                     fill="url(#colorMetric)"
                     connectNulls={true}
-                    dot={chartView !== 'monthly' ? { r: 4, fill: activeMetric === 'bloodGlucose' ? '#FF9F0A' : '#5856D6', strokeWidth: 2, stroke: '#fff' } : false}
-                    activeDot={{ r: 6, strokeWidth: 0 }}
+                    dot={chartView !== 'monthly' ? { r: 5, fill: activeMetric === 'bloodGlucose' ? '#FF9F0A' : '#0EA5E9', strokeWidth: 3, stroke: '#fff' } : false}
+                    activeDot={{ r: 8, strokeWidth: 0 }}
+                    animationDuration={1500}
                   />
                 </AreaChart>
               )}
