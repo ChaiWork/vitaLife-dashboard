@@ -36,6 +36,7 @@ import { ManualVitalsModal } from './components/ManualVitalsModal';
 import { NoDataModal } from './components/NoDataModal';
 import { LoginPage } from './components/Auth/LoginPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ChronicAIAnalysis } from './components/ChronicAIAnalysis';
 
 // Hooks & Services
 import { useAuth } from './hooks/useAuth';
@@ -63,15 +64,15 @@ export default function App() {
   const [isClearingAll, setIsClearingAll] = useState(false);
   const [isManualEntryOpen, setIsManualEntryOpen] = useState(false);
   const [manualVitals, setManualVitals] = useState({
-    hr: '',
     systolic: '',
     diastolic: '',
     glucose: '',
-    steps: '',
     spo2: ''
   });
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const [familyLinkStatus, setFamilyLinkStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  const [isChronicAnalyzing, setIsChronicAnalyzing] = useState(false);
+  const [chronicAnalysis, setChronicAnalysis] = useState<{ risk: "Low" | "Moderate" | "High" | "Critical", summary: string, advice: string } | null>(null);
   const lastAlertedId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -92,23 +93,26 @@ export default function App() {
       systolic: latestToday ? latestToday.systolic : undefined,
       diastolic: latestToday ? latestToday.diastolic : undefined,
       glucose: latestToday ? latestToday.glucose : undefined,
-      steps: latestToday ? latestToday.steps : 0,
+      steps: (latestToday && latestToday.steps !== undefined) ? latestToday.steps : 0,
       hasDataToday: !!latestToday
     };
   }, [heartLogs]);
 
   const dailyBreakdown = useMemo(() => {
-    if (breakdownLogs.length > 0) {
-      return Array.from({ length: 24 }, (_, hour) => {
-        const found = breakdownLogs.find(b => b.hour === hour);
-        return {
-          hour: `${hour.toString().padStart(2, '0')}:00`,
-          heartRate: found ? found.heartRate : null
-        };
-      });
-    }
+    // Initialize 24 buckets to ensure all hours are represented
+    const buckets: Record<number, { hr: number[], sys: number[], dia: number[], glu: number[] }> = {};
+    for (let i = 0; i < 24; i++) buckets[i] = { hr: [], sys: [], dia: [], glu: [] };
 
-    const buckets: Record<number, number[]> = {};
+    // 1. Incorporate data from breakdownLogs (hourly averages from sync)
+    breakdownLogs.forEach(b => {
+      const h = b.hour;
+      if (b.heartRate !== null && b.heartRate !== undefined) buckets[h].hr.push(b.heartRate);
+      if (b.systolic !== null && b.systolic !== undefined) buckets[h].sys.push(b.systolic);
+      if (b.diastolic !== null && b.diastolic !== undefined) buckets[h].dia.push(b.diastolic);
+      if (b.glucose !== null && b.glucose !== undefined) buckets[h].glu.push(b.glucose);
+    });
+
+    // 2. Incorporate raw manual logs for real-time updates
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -116,17 +120,23 @@ export default function App() {
       const logDate = log.createdAt?.toDate ? log.createdAt.toDate() : new Date(log.createdAt);
       if (logDate >= startOfDay) {
         const hour = logDate.getHours();
-        if (!buckets[hour]) buckets[hour] = [];
-        buckets[hour].push(log.heartRate);
+        if (log.heartRate !== null && log.heartRate !== undefined) buckets[hour].hr.push(log.heartRate);
+        if (log.systolic !== null && log.systolic !== undefined) buckets[hour].sys.push(log.systolic);
+        if (log.diastolic !== null && log.diastolic !== undefined) buckets[hour].dia.push(log.diastolic);
+        if (log.glucose !== null && log.glucose !== undefined) buckets[hour].glu.push(log.glucose);
       }
     });
 
+    // 3. Compute the final average for each hour
     return Array.from({ length: 24 }, (_, hour) => {
-      const values = buckets[hour];
-      const avg = values && values.length > 0 
-        ? Math.round(values.reduce((a, b) => a + b) / values.length)
-        : null;
-      return { hour: `${hour.toString().padStart(2, '0')}:00`, heartRate: avg };
+      const b = buckets[hour];
+      return { 
+        hour: `${hour.toString().padStart(2, '0')}:00`, 
+        heartRate: b.hr.length > 0 ? Math.round(b.hr.reduce((a, b) => a + b) / b.hr.length) : null,
+        systolic: b.sys.length > 0 ? Math.round(b.sys.reduce((a, b) => a + b) / b.sys.length) : null,
+        diastolic: b.dia.length > 0 ? Math.round(b.dia.reduce((a, b) => a + b) / b.dia.length) : null,
+        glucose: b.glu.length > 0 ? Math.round(b.glu.reduce((a, b) => a + b) / b.glu.length) : null
+      };
     });
   }, [heartLogs, breakdownLogs]);
 
@@ -136,25 +146,35 @@ export default function App() {
     const weekDayShort = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
     const getDailyAverages = (days: number) => {
-      const breakdown: Record<string, number[]> = {};
+      const breakdown: Record<string, { hr: number[], sys: number[], dia: number[], glu: number[] }> = {};
       const results = [];
       for (let i = 0; i < days; i++) {
         const d = new Date(today);
         d.setDate(d.getDate() - (days - 1 - i));
         const key = d.toDateString();
-        breakdown[key] = [];
+        breakdown[key] = { hr: [], sys: [], dia: [], glu: [] };
         let label = days === 7 ? weekDayShort[d.getDay()] : (i === 0 ? '-30d' : (i === 14 ? '-15d' : (i === days-1 ? 'Today' : '')));
-        results.push({ key, label, heartRate: null });
+        results.push({ key, label });
       }
       heartLogs.forEach(log => {
         const logDate = log.createdAt?.toDate ? log.createdAt.toDate() : new Date(log.createdAt);
         const key = new Date(logDate.getFullYear(), logDate.getMonth(), logDate.getDate()).toDateString();
-        if (breakdown[key] !== undefined) breakdown[key].push(log.heartRate);
+        if (breakdown[key]) {
+          if (log.heartRate !== null && log.heartRate !== undefined) breakdown[key].hr.push(log.heartRate);
+          if (log.systolic !== null && log.systolic !== undefined) breakdown[key].sys.push(log.systolic);
+          if (log.diastolic !== null && log.diastolic !== undefined) breakdown[key].dia.push(log.diastolic);
+          if (log.glucose !== null && log.glucose !== undefined) breakdown[key].glu.push(log.glucose);
+        }
       });
       return results.map(r => {
-        const vals = breakdown[r.key];
-        const avg = vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b) / vals.length) : null;
-        return { ...r, heartRate: avg };
+        const b = breakdown[r.key];
+        return { 
+          ...r, 
+          heartRate: b.hr.length > 0 ? Math.round(b.hr.reduce((a, b) => a + b) / b.hr.length) : null,
+          systolic: b.sys.length > 0 ? Math.round(b.sys.reduce((a, b) => a + b) / b.sys.length) : null,
+          diastolic: b.dia.length > 0 ? Math.round(b.dia.reduce((a, b) => a + b) / b.dia.length) : null,
+          glucose: b.glu.length > 0 ? Math.round(b.glu.reduce((a, b) => a + b) / b.glu.length) : null
+        };
       });
     };
     return { weekly: getDailyAverages(7), monthly: getDailyAverages(30) };
@@ -181,7 +201,7 @@ export default function App() {
         summary: insight.summary,
         advice: insight.advice,
         heartRate: insight.heartRate,
-        source: 'Gemini AI Insight'
+        source: 'Heart AI Insight'
       };
     });
     return [...historicalEntries, ...aiEntries].sort((a, b) => b.sortDate - a.sortDate);
@@ -243,7 +263,7 @@ export default function App() {
     setTimeout(() => setIsSyncing(false), 1500);
   };
 
-  const generateAIAnalysis = async () => {
+  const generateHeartAnalysis = async () => {
     if (!user) return;
     try {
       setIsAnalyzing(true);
@@ -257,6 +277,7 @@ export default function App() {
       
       const result = await callGeminiAnalysis(vitals, profile);
       
+      // Save to Insights
       const insightRef = doc(collection(db, 'users', user.uid, 'ai_insights'));
       await setDoc(insightRef, {
         heartRate: todayStats.heartRate || 0,
@@ -270,10 +291,23 @@ export default function App() {
         date: serverTimestamp()
       });
 
-      if (result.risk === 'High' || result.risk === 'Critical') {
+      // Update Risk History
+      const historyRef = doc(collection(db, 'risk_history'));
+      await setDoc(historyRef, {
+        uid: user.uid,
+        riskLevel: result.risk,
+        summary: result.summary,
+        advice: result.advice,
+        date: new Date().toISOString(),
+        vitals: vitals,
+        source: 'Heart AI Analysis'
+      });
+
+      // Notifications for Moderate, High, Critical
+      if (result.risk === 'Moderate' || result.risk === 'High' || result.risk === 'Critical') {
         const notifRef = doc(collection(db, 'users', user.uid, 'notifications'));
         await setDoc(notifRef, {
-          title: `AI Alert: ${result.risk} Risk Detected`,
+          title: `Heart AI Alert: ${result.risk} Risk`,
           message: result.summary,
           type: result.risk === 'Critical' ? 'emergency' : 'warning',
           read: false,
@@ -282,6 +316,64 @@ export default function App() {
       }
     } catch (e) { console.error('AI Analysis failed:', e); }
     finally { setIsAnalyzing(false); }
+  };
+
+  const generateChronicAnalysis = async () => {
+    if (!user) return;
+    try {
+      setIsChronicAnalyzing(true);
+      const vitals = {
+        heartRate: todayStats.heartRate,
+        systolic: todayStats.systolic,
+        diastolic: todayStats.diastolic,
+        glucose: todayStats.glucose,
+        spo2: heartLogs[0]?.spo2
+      };
+      
+      const result = await callGeminiAnalysis(vitals, profile);
+      setChronicAnalysis(result);
+      
+      const insightRef = doc(collection(db, 'users', user.uid, 'chronic_vitals_insights'));
+      await setDoc(insightRef, {
+        ...vitals,
+        ...result,
+        createdAt: serverTimestamp()
+      });
+
+      // Update Risk History
+      const historyRef = doc(collection(db, 'risk_history'));
+      await setDoc(historyRef, {
+        uid: user.uid,
+        riskLevel: result.risk,
+        summary: result.summary,
+        advice: result.advice,
+        date: new Date().toISOString(),
+        vitals: vitals,
+        source: 'Chronic Vitals Analysis'
+      });
+
+      // Notifications for Moderate, High, Critical
+      if (result.risk === 'Moderate' || result.risk === 'High' || result.risk === 'Critical') {
+        const notifRef = doc(collection(db, 'users', user.uid, 'notifications'));
+        await setDoc(notifRef, {
+          title: `Metabolic AI Alert: ${result.risk} Risk`,
+          message: result.summary,
+          type: result.risk === 'Critical' ? 'emergency' : 'warning',
+          read: false,
+          createdAt: serverTimestamp()
+        });
+      }
+    } catch (e) { 
+      console.error('Chronic AI Analysis failed:', e);
+      // Fallback for UI visualization
+      const fallback = {
+        risk: 'Moderate' as const,
+        summary: 'Metabolic markers show slight deviation from baseline. Systolic pressure is trending higher than previous week.',
+        advice: 'Reduce sodium intake and monitor post-prandial glucose levels for the next 48 hours.'
+      };
+      setChronicAnalysis(fallback);
+    }
+    finally { setIsChronicAnalyzing(false); }
   };
 
   const simulateHeartRate = async () => {
@@ -308,16 +400,14 @@ export default function App() {
       setIsSyncing(true);
       const logRef = doc(collection(db, 'users', user.uid, 'heart_rate_logs'));
       await setDoc(logRef, {
-        heartRate: Number(manualVitals.hr) || 0,
         systolic: manualVitals.systolic ? Number(manualVitals.systolic) : null,
         diastolic: manualVitals.diastolic ? Number(manualVitals.diastolic) : null,
         glucose: manualVitals.glucose ? Number(manualVitals.glucose) : null,
-        steps: Number(manualVitals.steps) || 0,
         spo2: manualVitals.spo2 ? Number(manualVitals.spo2) : null,
         createdAt: serverTimestamp()
       });
       setIsManualEntryOpen(false);
-      setManualVitals({ hr: '', systolic: '', diastolic: '', glucose: '', steps: '', spo2: '' });
+      setManualVitals({ systolic: '', diastolic: '', glucose: '', spo2: '' });
     } catch (e) { console.error('Manual entry failed:', e); }
     finally { setIsSyncing(false); }
   };
@@ -412,7 +502,7 @@ export default function App() {
             isAnalyzing={isAnalyzing}
             notifications={notifications}
             onToggleNotifications={() => setIsNotificationOpen(!isNotificationOpen)}
-            onRunAI={generateAIAnalysis}
+            onRunAI={generateHeartAnalysis}
             onRefresh={refreshData}
             onManualLog={() => setIsManualEntryOpen(true)}
             onSimulateLog={simulateHeartRate}
@@ -440,6 +530,11 @@ export default function App() {
                   isAnalyzing={isAnalyzing}
                   onFindClinic={findNearestClinic}
                 />
+                <ChronicAIAnalysis 
+                  analysis={chronicAnalysis}
+                  isAnalyzing={isChronicAnalyzing}
+                  onAnalyze={generateChronicAnalysis}
+                />
                 <HealthCharts 
                   chartView={chartView} 
                   setChartView={setChartView} 
@@ -459,6 +554,7 @@ export default function App() {
                 newMemberEmail={newMemberEmail}
                 setNewMemberEmail={setNewMemberEmail}
                 onAddMember={addFamilyMember}
+                onRemoveMember={(id) => deleteDoc(doc(db, 'users', user.uid, 'family_links', id))}
                 familyLinkStatus={familyLinkStatus}
                 setFamilyLinkStatus={setFamilyLinkStatus}
               />

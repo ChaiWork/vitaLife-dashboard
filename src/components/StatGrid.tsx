@@ -27,7 +27,9 @@ export const StatGrid: React.FC<StatGridProps> = ({ todayStats, profile }) => {
         />
         <StatCard 
           label="Blood Pressure" 
-          value={todayStats.hasDataToday && todayStats.systolic ? `${todayStats.systolic}/${todayStats.diastolic}` : '--'} 
+          value={todayStats.hasDataToday && (todayStats.systolic || todayStats.diastolic) 
+            ? `${todayStats.systolic ?? '--'}/${todayStats.diastolic ?? '--'}` 
+            : '--'} 
           unit="mmHg"
           status={getBPStatus(todayStats.systolic, todayStats.diastolic)}
         />
@@ -39,7 +41,7 @@ export const StatGrid: React.FC<StatGridProps> = ({ todayStats, profile }) => {
         />
         <StatCard 
           label="Steps Today" 
-          value={todayStats.hasDataToday ? todayStats.steps.toLocaleString() : '0'} 
+          value={todayStats.hasDataToday ? (todayStats.steps ?? 0).toLocaleString() : '0'} 
           unit="steps"
         />
       </div>

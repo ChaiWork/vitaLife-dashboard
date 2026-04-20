@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Activity, Plus } from 'lucide-react';
+import { Activity, Plus, Trash2 } from 'lucide-react';
 import { UserProfile, FamilyLink } from '../types';
 
 interface ProfileTabProps {
@@ -11,6 +11,7 @@ interface ProfileTabProps {
   newMemberEmail: string;
   setNewMemberEmail: (email: string) => void;
   onAddMember: (email: string) => void;
+  onRemoveMember: (id: string) => void;
   familyLinkStatus: { type: 'success' | 'error', message: string } | null;
   setFamilyLinkStatus: (status: any) => void;
 }
@@ -23,6 +24,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
   newMemberEmail,
   setNewMemberEmail,
   onAddMember,
+  onRemoveMember,
   familyLinkStatus,
   setFamilyLinkStatus
 }) => {
@@ -154,14 +156,22 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
 
           <div className="space-y-3">
             {familyLinks.map(link => (
-              <div key={link.id} className="flex justify-between items-center p-3 border border-minimal-border rounded-xl bg-white">
-                <div>
-                  <p className="text-xs font-bold text-minimal-ink">{link.displayName}</p>
-                  <p className="text-[10px] text-minimal-muted">{link.email}</p>
+              <div key={link.id} className="flex justify-between items-center p-3 border border-minimal-border rounded-xl bg-white group">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <p className="text-xs font-bold text-minimal-ink">{link.displayName}</p>
+                    <p className="text-[10px] text-minimal-muted">{link.email}</p>
+                  </div>
+                  <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-minimal-blue/10 text-minimal-blue rounded">
+                    {link.relation}
+                  </span>
                 </div>
-                <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-minimal-blue/10 text-minimal-blue rounded">
-                  {link.relation}
-                </span>
+                <button 
+                  onClick={() => onRemoveMember(link.id)}
+                  className="p-2 text-minimal-muted hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
             ))}
           </div>

@@ -6,11 +6,9 @@ interface ManualVitalsModalProps {
   isOpen: boolean;
   onClose: () => void;
   vitals: {
-    hr: string;
     systolic: string;
     diastolic: string;
     glucose: string;
-    steps: string;
     spo2: string;
   };
   setVitals: (vitals: any) => void;
@@ -35,7 +33,7 @@ export const ManualVitalsModal: React.FC<ManualVitalsModalProps> = ({
             className="glass-panel p-8 rounded-[40px] max-w-lg w-full shadow-3xl overflow-hidden"
           >
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold tracking-tight text-minimal-ink">Record Vitals</h3>
+              <h3 className="text-xl font-bold tracking-tight text-minimal-ink">Record Metabolic Vitals</h3>
               <button onClick={onClose} className="text-minimal-muted hover:text-minimal-ink">
                 <X size={20} />
               </button>
@@ -43,42 +41,12 @@ export const ManualVitalsModal: React.FC<ManualVitalsModalProps> = ({
 
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-minimal-muted ml-1">Heart Rate (BPM)</label>
-                <input 
-                  type="number"
-                  placeholder="e.g. 72"
-                  value={vitals.hr}
-                  onChange={(e) => setVitals({...vitals, hr: e.target.value})}
-                  className="w-full p-4 bg-minimal-bg border border-minimal-border rounded-2xl text-sm outline-none focus:ring-2 focus:ring-minimal-blue/20 transition-all font-medium"
-                />
-              </div>
-              <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-minimal-muted ml-1">Blood Glucose (mg/dL)</label>
                 <input 
                   type="number"
                   placeholder="e.g. 95"
                   value={vitals.glucose}
                   onChange={(e) => setVitals({...vitals, glucose: e.target.value})}
-                  className="w-full p-4 bg-minimal-bg border border-minimal-border rounded-2xl text-sm outline-none focus:ring-2 focus:ring-minimal-blue/20 transition-all font-medium"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-minimal-muted ml-1">BP Systolic</label>
-                <input 
-                  type="number"
-                  placeholder="Upper (120)"
-                  value={vitals.systolic}
-                  onChange={(e) => setVitals({...vitals, systolic: e.target.value})}
-                  className="w-full p-4 bg-minimal-bg border border-minimal-border rounded-2xl text-sm outline-none focus:ring-2 focus:ring-minimal-blue/20 transition-all font-medium"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-minimal-muted ml-1">BP Diastolic</label>
-                <input 
-                  type="number"
-                  placeholder="Lower (80)"
-                  value={vitals.diastolic}
-                  onChange={(e) => setVitals({...vitals, diastolic: e.target.value})}
                   className="w-full p-4 bg-minimal-bg border border-minimal-border rounded-2xl text-sm outline-none focus:ring-2 focus:ring-minimal-blue/20 transition-all font-medium"
                 />
               </div>
@@ -93,12 +61,22 @@ export const ManualVitalsModal: React.FC<ManualVitalsModalProps> = ({
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-minimal-muted ml-1">Steps Today</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-minimal-muted ml-1">BP Systolic (Upper)</label>
                 <input 
                   type="number"
-                  placeholder="e.g. 5000"
-                  value={vitals.steps}
-                  onChange={(e) => setVitals({...vitals, steps: e.target.value})}
+                  placeholder="Upper (120)"
+                  value={vitals.systolic}
+                  onChange={(e) => setVitals({...vitals, systolic: e.target.value})}
+                  className="w-full p-4 bg-minimal-bg border border-minimal-border rounded-2xl text-sm outline-none focus:ring-2 focus:ring-minimal-blue/20 transition-all font-medium"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-minimal-muted ml-1">BP Diastolic (Lower)</label>
+                <input 
+                  type="number"
+                  placeholder="Lower (80)"
+                  value={vitals.diastolic}
+                  onChange={(e) => setVitals({...vitals, diastolic: e.target.value})}
                   className="w-full p-4 bg-minimal-bg border border-minimal-border rounded-2xl text-sm outline-none focus:ring-2 focus:ring-minimal-blue/20 transition-all font-medium"
                 />
               </div>
@@ -106,7 +84,7 @@ export const ManualVitalsModal: React.FC<ManualVitalsModalProps> = ({
 
             <button 
               onClick={onSave}
-              disabled={!vitals.hr}
+              disabled={!vitals.glucose && !vitals.systolic && !vitals.spo2}
               className="w-full py-4 bg-minimal-ink text-white rounded-2xl font-bold text-sm hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed shadow-xl shadow-minimal-ink/20"
             >
               Save Vitals to Vault

@@ -29,9 +29,9 @@ export async function generateAIAnalysis(vitals: AIAnalysisRequest, profile: Use
     glucose: vitals.glucose,
     heartRate: vitals.heartRate,
     spo2: vitals.spo2,
-    age: profile?.age,
-    weight: profile?.weight,
-    height: profile?.height
+    age: profile?.age ? Number(profile.age) : undefined,
+    weight: profile?.weight ? Number(profile.weight) : undefined,
+    height: profile?.height ? Number(profile.height) : undefined
   });
   
   return result.data as AIAnalysisResponse;

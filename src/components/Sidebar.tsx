@@ -10,8 +10,8 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLogout }) => {
   return (
     <aside className="w-64 bg-minimal-white border-r border-minimal-border flex flex-col p-8 hidden md:flex">
-      <div className="mb-12">
-        <span className="font-bold text-xl tracking-tight text-minimal-blue">VitaLife Assistant</span>
+      <div className="mb-12 flex items-center gap-2">
+        <img src="/logo.png" alt="VitaLife Logo" className="h-24 w-auto object-contain" referrerPolicy="no-referrer" />
       </div>
 
       <nav className="flex-1 space-y-1">

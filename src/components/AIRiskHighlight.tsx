@@ -42,7 +42,7 @@ export const AIRiskHighlight: React.FC<AIRiskHighlightProps> = ({
     <div className={`${bgClass} p-8 rounded-3xl flex justify-between items-center shadow-lg transition-colors duration-500 text-white`}>
       <div className="space-y-2">
         <h2 className="text-xl font-semibold flex items-center gap-2">
-          Gemini AI Analysis
+          Heart AI Analysis
           {isAnalyzing && (
             <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
           )}
