@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Activity, Plus, Trash2, Edit2, Save, X } from 'lucide-react';
-import { UserProfile, FamilyLink } from '../types';
+import { UserProfile, FamilyLink } from '../../types';
 
 interface ProfileTabProps {
   profile: UserProfile | null;
@@ -41,6 +41,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
         age: profile.age || '',
         height: profile.height || '',
         weight: profile.weight || '',
+        role: profile.role || 'patient',
       });
     }
   }, [profile, isEditing]);
@@ -138,7 +139,18 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
           </div>
           <div className="flex justify-between items-center min-h-[48px]">
             <span className="text-minimal-muted">Role</span>
-            <span className="font-semibold uppercase text-xs tracking-widest">{profile?.role || 'user'}</span>
+            {isEditing ? (
+              <select 
+                value={formData.role || 'patient'} 
+                onChange={(e) => setFormData({...formData, role: e.target.value})}
+                className="bg-minimal-bg px-3 py-1.5 rounded-lg text-sm font-bold text-right outline-none focus:ring-2 focus:ring-minimal-blue/20"
+              >
+                <option value="patient">Patient</option>
+                <option value="caregiver">Caregiver</option>
+              </select>
+            ) : (
+              <span className="font-semibold uppercase text-xs tracking-widest">{profile?.role || 'patient'}</span>
+            )}
           </div>
         </div>
         
@@ -178,9 +190,9 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
           <div className="flex justify-between items-center min-h-[48px]">
             <span className="text-minimal-muted">BMI</span>
             <span className="font-semibold">
-              {profile?.height && profile?.weight 
+              {profile?.bmi || (profile?.height && profile?.weight 
                 ? (Number(profile.weight) / ((Number(profile.height)/100)**2)).toFixed(1) 
-                : '--'}
+                : '--')}
             </span>
           </div>
         </div>

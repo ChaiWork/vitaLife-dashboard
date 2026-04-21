@@ -10,6 +10,7 @@ interface ChartData {
   systolic?: number | null;
   diastolic?: number | null;
   glucose?: number | null;
+  bmi?: number | null;
 }
 
 interface HealthChartsProps {
@@ -18,7 +19,7 @@ interface HealthChartsProps {
   data: ChartData[];
 }
 
-type MetricType = 'heartRate' | 'bloodPressure' | 'bloodGlucose';
+type MetricType = 'heartRate' | 'bloodPressure' | 'bloodGlucose' | 'bmi';
 
 export const HealthCharts: React.FC<HealthChartsProps> = ({ chartView, setChartView, data }) => {
   const [activeMetric, setActiveMetric] = useState<MetricType>('heartRate');
@@ -28,6 +29,7 @@ export const HealthCharts: React.FC<HealthChartsProps> = ({ chartView, setChartV
       case 'heartRate': return 'Heart Rate';
       case 'bloodPressure': return 'Blood Pressure';
       case 'bloodGlucose': return 'Blood Glucose';
+      case 'bmi': return 'BMI Index';
       default: return '';
     }
   };
@@ -37,6 +39,7 @@ export const HealthCharts: React.FC<HealthChartsProps> = ({ chartView, setChartV
       case 'heartRate': return 'BPM';
       case 'bloodPressure': return 'mmHg';
       case 'bloodGlucose': return 'mg/dL';
+      case 'bmi': return 'kg/m²';
       default: return '';
     }
   };
@@ -46,6 +49,7 @@ export const HealthCharts: React.FC<HealthChartsProps> = ({ chartView, setChartV
       case 'heartRate': return "AI analyzing resting patterns. Latest data suggests stable autonomic recovery.";
       case 'bloodPressure': return "Vascular AI scan: Pulse pressure is within optimal bandwidth.";
       case 'bloodGlucose': return "Metabolic AI: No significant spikes detected in recent cycles.";
+      case 'bmi': return "Longitudinal BMI Analysis: Tracking body mass index trends to assess metabolic efficiency.";
       default: return "";
     }
   }
@@ -63,13 +67,13 @@ export const HealthCharts: React.FC<HealthChartsProps> = ({ chartView, setChartV
               <div className="flex items-center gap-3 mb-1">
                 <h3 className="font-display font-bold text-2xl tracking-tight text-minimal-ink">{getMetricLabel()}</h3>
                 <div className="flex gap-1 bg-minimal-bg/50 backdrop-blur-md p-1 rounded-xl border border-minimal-border transition-all">
-                  {(['heartRate', 'bloodPressure', 'bloodGlucose'] as MetricType[]).map((m) => (
+                  {(['heartRate', 'bloodPressure', 'bloodGlucose', 'bmi'] as MetricType[]).map((m) => (
                     <button 
                       key={m}
                       onClick={() => setActiveMetric(m)}
                       className={`px-3 py-1.5 text-[10px] font-black rounded-lg transition-all uppercase tracking-tighter ${activeMetric === m ? 'bg-white shadow-xl ring-1 ring-black/5 text-minimal-blue' : 'text-minimal-muted/60 hover:text-minimal-ink'}`}
                     >
-                      {m === 'heartRate' ? 'HR' : m === 'bloodPressure' ? 'BP' : 'GLU'}
+                      {m === 'heartRate' ? 'HR' : m === 'bloodPressure' ? 'BP' : m === 'bloodGlucose' ? 'GLU' : 'BMI'}
                     </button>
                   ))}
                 </div>
@@ -150,8 +154,8 @@ export const HealthCharts: React.FC<HealthChartsProps> = ({ chartView, setChartV
                 <AreaChart data={data}>
                   <defs>
                     <linearGradient id="colorMetric" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={activeMetric === 'bloodGlucose' ? '#FF9F0A' : '#0EA5E9'} stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor={activeMetric === 'bloodGlucose' ? '#FF9F0A' : '#0EA5E9'} stopOpacity={0}/>
+                      <stop offset="5%" stopColor={activeMetric === 'bloodGlucose' ? '#FF9F0A' : (activeMetric === 'bmi' ? '#10B981' : '#0EA5E9')} stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor={activeMetric === 'bloodGlucose' ? '#FF9F0A' : (activeMetric === 'bmi' ? '#10B981' : '#0EA5E9')} stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#F1F1F3" vertical={false} opacity={0.3} />
@@ -171,22 +175,22 @@ export const HealthCharts: React.FC<HealthChartsProps> = ({ chartView, setChartV
                     fontWeight={700}
                     tickLine={false} 
                     axisLine={false} 
-                    domain={activeMetric === 'bloodGlucose' ? [40, 200] : [40, 'auto']}
+                    domain={activeMetric === 'bloodGlucose' ? [40, 200] : (activeMetric === 'bmi' ? [15, 45] : [40, 'auto'])}
                   />
                   <Tooltip 
                     contentStyle={{ background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.4)', borderRadius: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
-                    itemStyle={{ fontSize: '12px', fontWeight: 'bold', color: activeMetric === 'bloodGlucose' ? '#FF9F0A' : '#0EA5E9' }}
+                    itemStyle={{ fontSize: '12px', fontWeight: 'bold', color: activeMetric === 'bloodGlucose' ? '#FF9F0A' : (activeMetric === 'bmi' ? '#10B981' : '#0EA5E9') }}
                     formatter={(value: any) => [value ? `${value} ${getUnit()}` : '--', getMetricLabel()]}
                   />
                   <Area 
                     type="monotone" 
-                    dataKey={activeMetric === 'heartRate' ? 'heartRate' : 'glucose'} 
-                    stroke={activeMetric === 'bloodGlucose' ? '#FF9F0A' : '#0EA5E9'} 
+                    dataKey={activeMetric === 'heartRate' ? 'heartRate' : (activeMetric === 'bloodGlucose' ? 'glucose' : 'bmi')} 
+                    stroke={activeMetric === 'bloodGlucose' ? '#FF9F0A' : (activeMetric === 'bmi' ? '#10B981' : '#0EA5E9')} 
                     strokeWidth={4}
                     fillOpacity={1} 
                     fill="url(#colorMetric)"
                     connectNulls={true}
-                    dot={chartView !== 'monthly' ? { r: 5, fill: activeMetric === 'bloodGlucose' ? '#FF9F0A' : '#0EA5E9', strokeWidth: 3, stroke: '#fff' } : false}
+                    dot={chartView !== 'monthly' ? { r: 5, fill: activeMetric === 'bloodGlucose' ? '#FF9F0A' : (activeMetric === 'bmi' ? '#10B981' : '#0EA5E9'), strokeWidth: 3, stroke: '#fff' } : false}
                     activeDot={{ r: 8, strokeWidth: 0 }}
                     animationDuration={1500}
                   />

@@ -9,10 +9,12 @@ interface ChronicAIAnalysisProps {
     advice: string;
   } | null;
   isAnalyzing: boolean;
+  needsSync?: boolean;
+  onSync?: () => void;
   onAnalyze: () => void;
 }
 
-export const ChronicAIAnalysis: React.FC<ChronicAIAnalysisProps> = ({ analysis, isAnalyzing, onAnalyze }) => {
+export const ChronicAIAnalysis: React.FC<ChronicAIAnalysisProps> = ({ analysis, isAnalyzing, needsSync, onSync, onAnalyze }) => {
   const getRiskColor = (risk: string) => {
     switch (risk) {
       case 'Critical': return 'from-red-500 to-red-600';
@@ -33,6 +35,23 @@ export const ChronicAIAnalysis: React.FC<ChronicAIAnalysisProps> = ({ analysis, 
 
   return (
     <div className="glass-panel p-8 rounded-3xl overflow-hidden relative group">
+      {/* Sync Required Overlay */}
+      {needsSync && !isAnalyzing && (
+        <div className="absolute inset-0 z-50 backdrop-blur-md bg-black/40 flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
+          <Brain className="text-white mb-4 animate-pulse" size={48} />
+          <h3 className="text-xl font-bold text-white mb-1">New Vitals Detected</h3>
+          <p className="text-white/70 text-xs max-w-xs mb-6">
+            New chronic vitals (BP/Glucose) need to be registered in the Cloud Vault before AI re-analysis.
+          </p>
+          <button 
+            onClick={onSync}
+            className="px-6 py-2.5 bg-minimal-blue text-white rounded-xl font-bold text-xs shadow-xl transition-all hover:scale-105 active:scale-95"
+          >
+            Sync Vitals
+          </button>
+        </div>
+      )}
+      
       <div className="absolute top-0 right-0 p-8 opacity-5">
         <Brain size={120} />
       </div>
@@ -51,13 +70,7 @@ export const ChronicAIAnalysis: React.FC<ChronicAIAnalysisProps> = ({ analysis, 
 
           {!analysis && !isAnalyzing ? (
             <div className="bg-minimal-bg/50 border border-minimal-border border-dashed rounded-2xl p-8 text-center">
-              <p className="text-sm text-minimal-muted mb-4 italic">Analysis for Blood Pressure & Glucose levels available</p>
-              <button 
-                onClick={onAnalyze}
-                className="vital-button flex items-center gap-2 mx-auto"
-              >
-                Start Heart AI Analysis
-              </button>
+              <p className="text-sm text-minimal-muted mb-4 italic">Analysis for Blood Pressure & Glucose levels will generate automatically after manual log entry.</p>
             </div>
           ) : isAnalyzing ? (
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
@@ -96,13 +109,6 @@ export const ChronicAIAnalysis: React.FC<ChronicAIAnalysisProps> = ({ analysis, 
               </div>
               
               <div className="flex justify-between items-center pt-2">
-                <p className="text-[10px] text-minimal-muted italic">Powered by Heart AI Insight (backend coming soon)</p>
-                <button 
-                  onClick={onAnalyze}
-                  className="text-xs font-bold text-minimal-blue hover:underline"
-                >
-                  Regenerate Analysis
-                </button>
               </div>
             </div>
           )}

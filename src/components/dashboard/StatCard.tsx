@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ECGHeartbeat } from './ECGHeartbeat';
+import { ECGHeartbeat } from '../common/ECGHeartbeat';
 
 interface StatCardProps {
   label: string;

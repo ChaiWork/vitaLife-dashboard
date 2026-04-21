@@ -1,12 +1,15 @@
 import React from 'react';
 import { Bell, Activity, Plus, RefreshCw, AlertTriangle } from 'lucide-react';
-import { AuthUser, Notification } from '../types';
+import { AuthUser, Notification, UserProfile } from '../../types';
 
 interface DashboardHeaderProps {
   user: AuthUser;
+  profile: UserProfile | null;
   isSyncing: boolean;
   isAnalyzing: boolean;
   isInactive?: boolean;
+  isFamilyInactive?: boolean;
+  inactiveFamilyName?: string;
   lastAnalysisTime: Date | null;
   notifications: Notification[];
   onToggleNotifications: () => void;
@@ -18,9 +21,12 @@ interface DashboardHeaderProps {
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   user,
+  profile,
   isSyncing,
   isAnalyzing,
   isInactive,
+  isFamilyInactive,
+  inactiveFamilyName,
   lastAnalysisTime,
   notifications,
   onToggleNotifications,
@@ -30,6 +36,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onSimulateLog
 }) => {
   const unreadCount = notifications.filter(n => !n.read).length;
+  const role = profile?.role || 'patient';
+  const showInactive = (role === 'patient' && isInactive) || (role === 'caregiver' && isFamilyInactive);
+  const inactiveMessage = role === 'caregiver' ? `Family Inactive: ${inactiveFamilyName || 'Member'}` : 'No Movement: 2 Hours';
 
   const [timeAgo, setTimeAgo] = React.useState<string>('');
 
@@ -53,10 +62,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <div className="flex items-center gap-3 text-minimal-muted text-sm font-medium">
             <div className={`w-2.5 h-2.5 rounded-full ${isSyncing ? 'bg-minimal-blue animate-pulse' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'}`} />
             {isSyncing ? 'Syncing Analytics...' : 'Secure Intelligent Sync Active'}
-            {isInactive && (
+            {showInactive && (
               <span className="flex items-center gap-1.5 ml-4 text-rose-500 font-bold text-xs ai-pulse-danger px-3 py-1 bg-rose-500/10 rounded-full">
                 <AlertTriangle size={14} />
-                No Movement: 2 Hours
+                {inactiveMessage}
               </span>
             )}
           </div>

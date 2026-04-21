@@ -16,7 +16,8 @@ import {
   Notification, 
   FamilyLink, 
   RiskEntry,
-  AuthUser
+  AuthUser,
+  BMILog
 } from '../types';
 
 export function useHealthData(user: AuthUser | null) {
@@ -27,6 +28,8 @@ export function useHealthData(user: AuthUser | null) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [familyLinks, setFamilyLinks] = useState<FamilyLink[]>([]);
   const [riskHistory, setRiskHistory] = useState<RiskEntry[]>([]);
+  const [bmiLogs, setBmiLogs] = useState<BMILog[]>([]);
+  const [chronicInsights, setChronicInsights] = useState<AIInsight[]>([]);
 
   // Listen for Heart Rate Logs
   useEffect(() => {
@@ -130,6 +133,36 @@ export function useHealthData(user: AuthUser | null) {
     return () => unsubscribe();
   }, [user]);
 
+  // Listen for BMI Logs
+  useEffect(() => {
+    if (!user) return;
+    const q = query(
+      collection(db, 'users', user.uid, 'bmi_logs'),
+      orderBy('createdAt', 'desc'),
+      limit(100)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const logs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as BMILog));
+      setBmiLogs(logs);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  // Listen for Chronic AI Insights
+  useEffect(() => {
+    if (!user) return;
+    const q = query(
+      collection(db, 'users', user.uid, 'chronic_vitals_insights'),
+      orderBy('createdAt', 'desc'),
+      limit(5)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const insights = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as AIInsight));
+      setChronicInsights(insights);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
   return {
     heartLogs,
     chronicLogs,
@@ -137,6 +170,8 @@ export function useHealthData(user: AuthUser | null) {
     aiInsights,
     notifications,
     familyLinks,
-    riskHistory
+    riskHistory,
+    bmiLogs,
+    chronicInsights
   };
 }

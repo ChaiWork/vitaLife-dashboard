@@ -34,6 +34,7 @@ export interface UserProfile {
   gender?: string;
   height?: string;
   weight?: string;
+  bmi?: number;
   role?: string;
   lastLogin?: any;
 }
@@ -73,6 +74,14 @@ export interface Notification {
   message: string;
   type: 'info' | 'warning' | 'emergency';
   read: boolean;
+  createdAt: any;
+}
+
+export interface BMILog {
+  id: string;
+  bmi: number;
+  weight: number;
+  height: number;
   createdAt: any;
 }
 

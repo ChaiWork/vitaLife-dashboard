@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Trash2, MapPin } from 'lucide-react';
-import { Notification } from '../types';
+import { Notification } from '../../types';
 
 interface NotificationPanelProps {
   notifications: Notification[];

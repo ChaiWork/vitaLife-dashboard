@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Users, AlertTriangle, Activity, Heart, Clock, ChevronRight, UserPlus } from 'lucide-react';
-import { FamilyLink } from '../types';
-import { db, collection, query, orderBy, limit, onSnapshot } from '../lib/firebase';
+import { FamilyLink } from '../../types';
+import { db, collection, query, orderBy, limit, onSnapshot } from '../../lib/firebase';
 
 interface CaregiverViewProps {
   familyLinks: FamilyLink[];

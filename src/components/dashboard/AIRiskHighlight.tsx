@@ -7,6 +7,9 @@ interface AIRiskHighlightProps {
   summary: string;
   advice: string;
   isAnalyzing: boolean;
+  needsSync?: boolean;
+  lastSyncTime?: Date | null;
+  onRefresh?: () => void;
   onFindClinic: () => void;
 }
 
@@ -15,6 +18,9 @@ export const AIRiskHighlight: React.FC<AIRiskHighlightProps> = ({
   summary,
   advice,
   isAnalyzing,
+  needsSync,
+  lastSyncTime,
+  onRefresh,
   onFindClinic
 }) => {
   const risk = latestRisk.toLowerCase();
@@ -38,6 +44,25 @@ export const AIRiskHighlight: React.FC<AIRiskHighlightProps> = ({
       animate={{ opacity: 1, y: 0 }}
       className={`relative p-8 rounded-[40px] overflow-hidden transition-all duration-700 shadow-2xl ${bgClass} ${pulseClass} border border-white/20`}
     >
+      {/* Sync Required Overlay */}
+      {needsSync && !isAnalyzing && (
+        <div className="absolute inset-0 z-50 backdrop-blur-md bg-black/40 flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
+          <div className="p-4 bg-white/20 rounded-full mb-4 ring-2 ring-white/50 animate-bounce">
+            <Sparkles className="text-white" size={32} />
+          </div>
+          <h3 className="text-2xl font-display font-bold text-white mb-2">Sync New Data Required</h3>
+          <p className="text-white/80 text-sm max-w-xs mb-6">
+            Please sync new vitals from your device or manual log (Tracking created current time) before the AI AI can run a fresh analysis.
+          </p>
+          <button 
+            onClick={onRefresh}
+            className="px-8 py-3 bg-white text-minimal-ink rounded-2xl font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all"
+          >
+            Sync Now
+          </button>
+        </div>
+      )}
+
       {/* Futuristic Background Patterns */}
       <div className="absolute inset-0 opacity-10">
         <svg width="100%" height="100%" className="absolute inset-0">

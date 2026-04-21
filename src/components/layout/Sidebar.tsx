@@ -7,9 +7,10 @@ interface SidebarProps {
   onLogout: () => void;
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
+  userRole?: string;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLogout, theme, setTheme }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLogout, theme, setTheme, userRole }) => {
   return (
     <aside className={`w-64 border-r border-minimal-border flex flex-col p-8 hidden md:flex transition-colors ${theme === 'dark' ? 'bg-[#0A0A0A] border-white/5' : 'bg-minimal-white'}`}>
       <div className="mb-12 flex items-center gap-2">
@@ -26,19 +27,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLog
           icon={<LayoutDashboard size={18} />}
           label="Overview"
         />
-        <NavButton 
-          active={activeTab === 'caregiver'} 
-          theme={theme}
-          onClick={() => setActiveTab('caregiver')} 
-          icon={<HeartHandshake size={18} />}
-          label="Caregiver"
-        />
+        {userRole === 'caregiver' && (
+          <NavButton 
+            active={activeTab === 'caregiver'} 
+            theme={theme}
+            onClick={() => setActiveTab('caregiver')} 
+            icon={<HeartHandshake size={18} />}
+            label="Caregiver"
+          />
+        )}
         <NavButton 
           active={activeTab === 'profile'} 
           theme={theme}
           onClick={() => setActiveTab('profile')} 
           icon={<Users size={18} />}
-          label="Biometrics"
+          label="User"
         />
         <NavButton 
           active={activeTab === 'history'} 

@@ -1,8 +1,8 @@
 import React from 'react';
 import { StatCard } from './StatCard';
-import { UserProfile } from '../types';
-import { getBPStatus, getGlucoseStatus, getHRStatus } from '../lib/healthUtils';
-import { Heart, Activity, Droplets, Zap, Thermometer, Wind } from 'lucide-react';
+import { UserProfile } from '../../types';
+import { getBPStatus, getGlucoseStatus, getHRStatus } from '../../lib/healthUtils';
+import { Heart, Activity, Droplets, Zap, Thermometer, Wind, Scale } from 'lucide-react';
 
 interface StatGridProps {
   todayStats: {
@@ -19,9 +19,20 @@ interface StatGridProps {
 }
 
 export const StatGrid: React.FC<StatGridProps> = ({ todayStats, profile }) => {
+  const bmi = profile?.bmi || (profile?.height && profile?.weight 
+    ? Number((Number(profile.weight) / ((Number(profile.height)/100)**2)).toFixed(1)) 
+    : null);
+
+  const getBMIStatus = (val: number | null) => {
+    if (val === null) return undefined;
+    if (val < 18.5) return { level: 'Underweight', color: 'text-minimal-orange', label: 'Underweight' };
+    if (val < 25) return { level: 'Normal', color: 'text-emerald-500', label: 'Healthy' };
+    return { level: 'Overweight', color: 'text-minimal-orange', label: 'Overweight' };
+  };
+
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard 
           label="Heart Rate" 
           value={todayStats.hasDataToday ? todayStats.heartRate?.toString() || '--' : '--'} 
@@ -36,6 +47,13 @@ export const StatGrid: React.FC<StatGridProps> = ({ todayStats, profile }) => {
           unit="%"
           icon={<Wind size={18} />}
           status={todayStats.spo2 && todayStats.spo2 < 95 ? { level: 'Low', color: 'text-minimal-orange', label: 'Monitor' } : { level: 'Normal', color: 'text-emerald-500' }}
+        />
+        <StatCard 
+          label="BMI Index" 
+          value={bmi?.toString() || '--'} 
+          unit="kg/m²"
+          icon={<Scale size={18} />}
+          status={getBMIStatus(bmi)}
         />
       </div>
 
