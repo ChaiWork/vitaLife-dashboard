@@ -59,7 +59,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
       className="space-y-6"
     >
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-semibold">User Biometrics</h3>
+        <h3 className="text-xl font-semibold">User Biodata</h3>
         {!isEditing ? (
           <button 
             onClick={() => setIsEditing(true)}

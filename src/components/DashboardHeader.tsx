@@ -48,7 +48,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   return (
     <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
       <div className="flex-1">
-        <h1 className="text-4xl font-display font-bold tracking-tight text-minimal-ink mb-2">Health Command</h1>
+        <h1 className="text-4xl font-display font-bold tracking-tight text-minimal-ink mb-2">Health Dashboard</h1>
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-3 text-minimal-muted text-sm font-medium">
             <div className={`w-2.5 h-2.5 rounded-full ${isSyncing ? 'bg-minimal-blue animate-pulse' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'}`} />

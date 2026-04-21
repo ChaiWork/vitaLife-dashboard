@@ -39,6 +39,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChronicAIAnalysis } from './components/ChronicAIAnalysis';
 import { CaregiverView } from './components/CaregiverView';
 import { SettingsTab } from './components/SettingsTab';
+import { GraphAIIntelligence } from './components/GraphAIIntelligence';
 
 // Hooks & Services
 import { useAuth } from './hooks/useAuth';
@@ -363,6 +364,20 @@ export default function App() {
           read: false,
           createdAt: serverTimestamp()
         });
+
+        // Forward to family links
+        familyLinks.forEach(async (link) => {
+          try {
+            const familyNotifRef = doc(collection(db, 'users', link.memberUid, 'notifications'));
+            await setDoc(familyNotifRef, {
+              title: `AI Health Alert: ${profile?.fullName || user.displayName || 'Family Member'} - ${result.risk} Risk`,
+              message: `Heart AI: ${result.summary}`,
+              type: result.risk === 'Critical' ? 'emergency' : 'warning',
+              read: false,
+              createdAt: serverTimestamp()
+            });
+          } catch (e) { console.warn('Failed to forward notif:', e); }
+        });
       }
     } catch (e) { console.error('AI Analysis failed:', e); }
     finally { 
@@ -415,6 +430,20 @@ export default function App() {
           type: result.risk === 'Critical' ? 'emergency' : 'warning',
           read: false,
           createdAt: serverTimestamp()
+        });
+
+        // Forward to family links
+        familyLinks.forEach(async (link) => {
+          try {
+            const familyNotifRef = doc(collection(db, 'users', link.memberUid, 'notifications'));
+            await setDoc(familyNotifRef, {
+              title: `AI Health Alert: ${profile?.fullName || user.displayName || 'Family Member'} - ${result.risk} Risk`,
+              message: `Metabolic AI: ${result.summary}`,
+              type: result.risk === 'Critical' ? 'emergency' : 'warning',
+              read: false,
+              createdAt: serverTimestamp()
+            });
+          } catch (e) { console.warn('Failed to forward notif:', e); }
         });
       }
     } catch (e) { 
@@ -629,6 +658,11 @@ export default function App() {
                   chartView={chartView} 
                   setChartView={setChartView} 
                   data={chartView === 'daily' ? dailyBreakdown : (chartView === 'weekly' ? periodicTrends.weekly : periodicTrends.monthly)} 
+                />
+                <GraphAIIntelligence 
+                  view={chartView}
+                  data={chartView === 'daily' ? dailyBreakdown : (chartView === 'weekly' ? periodicTrends.weekly : periodicTrends.monthly)}
+                  metric="Vitals Metadata"
                 />
               </motion.div>
             )}

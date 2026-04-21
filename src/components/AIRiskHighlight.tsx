@@ -99,7 +99,31 @@ export const AIRiskHighlight: React.FC<AIRiskHighlightProps> = ({
             {isHighRisk ? '82' : isModerateRisk ? '90' : '98'}
             <span className="text-2xl opacity-60 ml-1 font-display">%</span>
           </div>
-          <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-lg
+          
+          {/* Analysis Level Indicators */}
+          <div className="w-full mt-2 space-y-1">
+            <div className="flex items-center justify-between w-full text-[8px] font-bold text-white/50 px-1">
+              <span>20</span>
+              <span>40</span>
+              <span>60</span>
+              <span>80</span>
+              <span>100</span>
+            </div>
+            <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden relative">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${isHighRisk ? '82' : isModerateRisk ? '90' : '98'}%` }}
+                className="absolute inset-y-0 left-0 bg-white"
+              />
+              {/* Tick Marks */}
+              <div className="absolute inset-y-0 left-[20%] w-[1px] bg-white/20" />
+              <div className="absolute inset-y-0 left-[40%] w-[1px] bg-white/20" />
+              <div className="absolute inset-y-0 left-[60%] w-[1px] bg-white/20" />
+              <div className="absolute inset-y-0 left-[80%] w-[1px] bg-white/20" />
+            </div>
+          </div>
+
+          <div className={`mt-4 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-lg
             ${isHighRisk ? 'bg-red-900/40 text-white' : isModerateRisk ? 'bg-amber-900/40 text-white' : 'bg-emerald-900/40 text-white'}`}>
             {risk} risk detected
           </div>

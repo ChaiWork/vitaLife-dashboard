@@ -161,7 +161,10 @@ const MemberCard: React.FC<{ member: FamilyLink }> = ({ member }) => {
           <div className={`w-2 h-2 rounded-full ${status === 'Active Now' ? 'bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse' : 'bg-rose-500'}`} />
           <span className={`text-[10px] font-black uppercase tracking-[0.15em] ${status === 'Active Now' ? 'text-emerald-600' : 'text-rose-600'}`}>{status}</span>
         </div>
-        <div className="flex items-center gap-1 text-[10px] font-black text-minimal-blue uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0">
+        <div 
+          className="flex items-center gap-1 text-[10px] font-black text-minimal-blue uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0"
+          title="Securely synchronizes biodata, logs, and alerts across the family fleet to ensure real-time caregiver monitoring."
+        >
           Sync Profile <ChevronRight size={14} />
         </div>
       </div>
