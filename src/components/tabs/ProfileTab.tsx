@@ -64,7 +64,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
         {!isEditing ? (
           <button 
             onClick={() => setIsEditing(true)}
-            className="flex items-center gap-2 px-4 py-2 border border-minimal-border rounded-xl text-xs font-bold text-minimal-muted hover:bg-white transition-all shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 border border-minimal-border rounded-xl text-xs font-bold text-minimal-muted hover:bg-minimal-white transition-all shadow-sm"
           >
             <Edit2 size={14} />
             Edit Profile
@@ -73,14 +73,14 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
           <div className="flex gap-2">
             <button 
               onClick={handleSave}
-              className="flex items-center gap-2 px-4 py-2 bg-minimal-ink text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-minimal-ink text-minimal-bg rounded-xl text-xs font-bold hover:opacity-90 transition-all shadow-sm"
             >
               <Save size={14} />
               Save
             </button>
             <button 
               onClick={() => setIsEditing(false)}
-              className="flex items-center gap-2 px-4 py-2 border border-minimal-border rounded-xl text-xs font-bold text-minimal-muted hover:bg-white transition-all shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 border border-minimal-border rounded-xl text-xs font-bold text-minimal-muted hover:bg-minimal-white transition-all shadow-sm"
             >
               <X size={14} />
               Cancel
@@ -98,10 +98,10 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                 type="text" 
                 value={formData.fullName} 
                 onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                className="bg-minimal-bg px-3 py-1.5 rounded-lg text-sm font-bold text-right outline-none focus:ring-2 focus:ring-minimal-blue/20"
+                className="bg-minimal-bg dark:bg-white/5 px-3 py-1.5 rounded-lg text-sm font-bold text-right outline-none focus:ring-2 focus:ring-minimal-blue/20"
               />
             ) : (
-              <span className="font-semibold">{profile?.fullName || '--'}</span>
+              <span className="font-semibold text-minimal-ink">{profile?.fullName || '--'}</span>
             )}
           </div>
           <div className="flex justify-between border-b border-minimal-border pb-4 items-center min-h-[48px]">
@@ -110,7 +110,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
               <select 
                 value={formData.gender} 
                 onChange={(e) => setFormData({...formData, gender: e.target.value})}
-                className="bg-minimal-bg px-3 py-1.5 rounded-lg text-sm font-bold text-right outline-none focus:ring-2 focus:ring-minimal-blue/20"
+                className="bg-minimal-bg dark:bg-white/5 px-3 py-1.5 rounded-lg text-sm font-bold text-right outline-none focus:ring-2 focus:ring-minimal-blue/20"
               >
                 <option value="">Select</option>
                 <option value="male">Male</option>
@@ -118,7 +118,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                 <option value="other">Other</option>
               </select>
             ) : (
-              <span className="font-semibold capitalize">{profile?.gender || '--'}</span>
+              <span className="font-semibold capitalize text-minimal-ink">{profile?.gender || '--'}</span>
             )}
           </div>
           <div className="flex justify-between border-b border-minimal-border pb-4 items-center min-h-[48px]">
@@ -129,12 +129,12 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                   type="number" 
                   value={formData.age} 
                   onChange={(e) => setFormData({...formData, age: e.target.value})}
-                  className="bg-minimal-bg px-3 py-1.5 rounded-lg text-sm font-bold text-right outline-none w-20 focus:ring-2 focus:ring-minimal-blue/20"
+                  className="bg-minimal-bg dark:bg-white/5 px-3 py-1.5 rounded-lg text-sm font-bold text-right outline-none w-20 focus:ring-2 focus:ring-minimal-blue/20"
                 />
                 <span className="text-xs text-minimal-muted font-bold">years old</span>
               </div>
             ) : (
-              <span className="font-semibold">{profile?.age || '--'} years old</span>
+              <span className="font-semibold text-minimal-ink">{profile?.age || '--'} years old</span>
             )}
           </div>
           <div className="flex justify-between items-center min-h-[48px]">
@@ -143,13 +143,13 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
               <select 
                 value={formData.role || 'patient'} 
                 onChange={(e) => setFormData({...formData, role: e.target.value})}
-                className="bg-minimal-bg px-3 py-1.5 rounded-lg text-sm font-bold text-right outline-none focus:ring-2 focus:ring-minimal-blue/20"
+                className="bg-minimal-bg dark:bg-white/5 px-3 py-1.5 rounded-lg text-sm font-bold text-right outline-none focus:ring-2 focus:ring-minimal-blue/20"
               >
                 <option value="patient">Patient</option>
                 <option value="caregiver">Caregiver</option>
               </select>
             ) : (
-              <span className="font-semibold uppercase text-xs tracking-widest">{profile?.role || 'patient'}</span>
+              <span className="font-semibold uppercase text-xs tracking-widest text-minimal-ink">{profile?.role || 'patient'}</span>
             )}
           </div>
         </div>
@@ -218,7 +218,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
             {!isAddingMember && (
               <button 
                 onClick={() => setIsAddingMember(true)}
-                className="px-3 py-1.5 bg-minimal-ink text-white rounded-lg text-xs font-bold flex items-center gap-2 hover:opacity-90 transition-all"
+                className="px-3 py-1.5 bg-minimal-ink text-white dark:bg-vital-400 dark:text-minimal-bg rounded-lg text-xs font-bold flex items-center gap-2 hover:opacity-90 transition-all"
               >
                 <Plus size={14} /> Add Member
               </button>
@@ -238,11 +238,11 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                   value={newMemberEmail}
                   onChange={(e) => setNewMemberEmail(e.target.value)}
                   placeholder="family@example.com"
-                  className="flex-1 px-3 py-2 bg-white border border-minimal-border rounded-xl text-xs outline-none focus:ring-2 focus:ring-minimal-blue/20"
+                  className="flex-1 px-3 py-2 bg-minimal-white border border-minimal-border rounded-xl text-xs outline-none focus:ring-2 focus:ring-minimal-blue/20 text-minimal-ink"
                 />
                 <button 
                   onClick={() => onAddMember(newMemberEmail)}
-                  className="px-4 py-2 bg-minimal-ink text-white rounded-xl text-xs font-bold hover:opacity-90 active:scale-95 transition-all"
+                  className="px-4 py-2 bg-minimal-ink text-white dark:bg-vital-400 dark:text-minimal-bg rounded-xl text-xs font-bold hover:opacity-90 active:scale-95 transition-all"
                 >
                   Link
                 </button>
@@ -251,7 +251,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                     setIsAddingMember(false);
                     setFamilyLinkStatus(null);
                   }}
-                  className="px-4 py-2 bg-white border border-minimal-border text-minimal-muted rounded-xl text-xs font-bold hover:bg-minimal-bg transition-all"
+                  className="px-4 py-2 bg-minimal-white border border-minimal-border text-minimal-muted rounded-xl text-xs font-bold hover:bg-minimal-bg transition-all"
                 >
                   Cancel
                 </button>
@@ -264,7 +264,9 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               className={`p-3 rounded-xl text-[11px] font-medium border ${
-                familyLinkStatus.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'
+                familyLinkStatus.type === 'success' 
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30' 
+                  : 'bg-red-50 text-red-700 border-red-100 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/30'
               }`}
             >
               {familyLinkStatus.message}
@@ -277,7 +279,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
 
           <div className="space-y-3">
             {familyLinks.map(link => (
-              <div key={link.id} className="flex justify-between items-center p-3 border border-minimal-border rounded-xl bg-white group">
+              <div key={link.id} className="flex justify-between items-center p-3 border border-minimal-border rounded-xl bg-minimal-white group">
                 <div className="flex items-center gap-3">
                   <div>
                     <p className="text-xs font-bold text-minimal-ink">{link.displayName}</p>

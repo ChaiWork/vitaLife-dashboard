@@ -7,16 +7,17 @@ interface GraphAIIntelligenceProps {
   view: 'daily' | 'weekly' | 'monthly';
   data: any[];
   metric: string;
+  bmiData?: any[];
 }
 
-export const GraphAIIntelligence: React.FC<GraphAIIntelligenceProps> = ({ view, data, metric }) => {
+export const GraphAIIntelligence: React.FC<GraphAIIntelligenceProps> = ({ view, data, metric, bmiData }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiResponse, setAiResponse] = useState<GraphAnalysisResponse | null>(null);
 
   const runDeepAnalysis = async () => {
     setIsAnalyzing(true);
     try {
-      const response = await generateGraphAnalysis({ view, data, metric });
+      const response = await generateGraphAnalysis({ view, data, metric, bmiData });
       setAiResponse(response);
     } catch (error) {
       console.error('Graph analysis failed:', error);
@@ -38,7 +39,7 @@ export const GraphAIIntelligence: React.FC<GraphAIIntelligenceProps> = ({ view, 
   };
 
   return (
-    <div className="glass-panel p-6 rounded-[32px] bg-white/40 backdrop-blur-xl border border-white/40 shadow-xl mt-6 relative overflow-hidden group">
+    <div className="glass-panel p-6 rounded-[32px] mt-6 relative overflow-hidden group">
       <div className="absolute -right-12 -top-12 p-8 text-minimal-blue/5 group-hover:text-minimal-blue/10 transition-colors">
         <Brain size={160} />
       </div>
@@ -61,7 +62,7 @@ export const GraphAIIntelligence: React.FC<GraphAIIntelligenceProps> = ({ view, 
         {!aiResponse && !isAnalyzing && (
           <button 
             onClick={runDeepAnalysis}
-            className="px-4 py-2 bg-minimal-ink text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-minimal-ink/20"
+            className="px-4 py-2 bg-minimal-ink text-white dark:bg-vital-400 dark:text-minimal-bg rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-minimal-ink/20"
           >
             Compute Trends
           </button>
@@ -93,16 +94,16 @@ export const GraphAIIntelligence: React.FC<GraphAIIntelligenceProps> = ({ view, 
                   </div>
                   
                   <div className="grid grid-cols-1 gap-2 min-w-[200px]">
-                    <div className="flex items-center justify-between p-3 bg-white/60 rounded-2xl border border-white/40 shadow-sm">
+                    <div className="flex items-center justify-between p-3 bg-white/60 dark:bg-white/5 rounded-2xl border border-white/40 dark:border-white/10 shadow-sm">
                       <span className="text-[10px] font-black text-minimal-muted/60 uppercase">Stability</span>
-                      <span className="text-sm font-bold text-emerald-600">{aiResponse.stability.toFixed(1)}%</span>
+                      <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{aiResponse.stability.toFixed(1)}%</span>
                     </div>
                     {aiResponse.trends.map((t, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-white/60 rounded-2xl border border-white/40 shadow-sm">
+                      <div key={idx} className="flex items-center justify-between p-3 bg-white/60 dark:bg-white/5 rounded-2xl border border-white/40 dark:border-white/10 shadow-sm">
                         <span className="text-[10px] font-black text-minimal-muted/60 uppercase">{t.label}</span>
                         <div className="flex items-center gap-1.5">
                           {getTrendIcon(t.trend)}
-                          <span className={`text-[11px] font-bold ${t.trend === 'up' ? 'text-rose-500' : (t.trend === 'down' ? 'text-emerald-500' : 'text-minimal-muted')}`}>
+                          <span className={`text-[11px] font-bold ${t.trend === 'up' ? 'text-rose-500' : (t.trend === 'down' ? 'text-emerald-500 dark:text-emerald-400' : 'text-minimal-muted')}`}>
                             {t.change > 0 ? '+' : ''}{t.change}%
                           </span>
                         </div>

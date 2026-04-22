@@ -33,7 +33,7 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="absolute right-0 mt-2 w-80 bg-white border border-minimal-border rounded-2xl shadow-2xl z-50 overflow-hidden"
+            className="absolute right-0 mt-2 w-80 bg-minimal-white dark:bg-minimal-bg border border-minimal-border rounded-2xl shadow-2xl z-50 overflow-hidden"
           >
             <div className="p-4 border-b border-minimal-border flex justify-between items-center">
               <div className="flex items-center gap-2">
@@ -79,8 +79,8 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                   >
                     <div className="flex gap-3 relative group">
                       <div className={`mt-0.5 w-2 h-2 rounded-full shrink-0 ${
-                        notif.type === 'emergency' ? 'bg-red-500' : 
-                        notif.type === 'warning' ? 'bg-amber-500' : 'bg-blue-500'
+                        notif.type === 'emergency' ? 'bg-rose-500' : 
+                        notif.type === 'warning' ? 'bg-amber-500' : 'bg-vital-400'
                       }`} />
                       <div className="flex-1">
                         <div className="flex justify-between items-start">

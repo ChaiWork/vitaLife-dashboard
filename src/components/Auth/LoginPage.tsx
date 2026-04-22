@@ -97,7 +97,7 @@ export const LoginPage: React.FC = () => {
             />
           </div>
           
-          {error && <p className="text-xs text-red-500 mt-2 bg-red-50 p-3 rounded-xl border border-red-100 leading-tight">{error}</p>}
+          {error && <p className="text-xs text-red-500 mt-2 bg-red-50 dark:bg-red-950/20 p-3 rounded-xl border border-red-100 dark:border-red-900/30 leading-tight">{error}</p>}
 
           <button 
             type="submit"

@@ -43,7 +43,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ history }) => {
               className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${
                 (level === 'danger' ? filter === 'critical' : filter === level)
                   ? 'bg-minimal-ink text-white border-minimal-ink'
-                  : 'bg-white text-minimal-muted border-minimal-border hover:border-minimal-muted'
+                  : 'bg-minimal-white text-minimal-muted border-minimal-border hover:border-minimal-muted'
               }`}
             >
               {level}
@@ -53,39 +53,61 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ history }) => {
       </div>
 
       <div className="space-y-4">
-        {filteredHistory.map((item) => (
-          <div key={item.id} className="glass-panel p-6 rounded-3xl flex flex-col md:flex-row gap-6 items-start">
-            <div className="md:w-40 shrink-0">
-              <p className="text-xs font-bold text-minimal-muted uppercase tracking-widest mb-1">{item.source}</p>
-              <p className="text-sm font-semibold text-minimal-ink">
-                {item.date.includes('T') && item.date.includes('Z') ? 
-                  new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) + ' ' + new Date(item.date).toLocaleDateString() : 
-                  item.date}
-              </p>
-              <span className={`text-[10px] font-bold uppercase tracking-widest inline-block px-2 py-0.5 rounded mt-2 ${
-                item.risk.toLowerCase().includes('high') ? 'bg-red-50 text-red-600' :
-                item.risk.toLowerCase().includes('critical') || item.risk.toLowerCase().includes('danger') ? 'bg-red-600 text-white' :
-                item.risk.toLowerCase().includes('moderate') || item.risk.toLowerCase().includes('medium') ? 'bg-amber-50 text-amber-600' : 
-                'bg-emerald-50 text-emerald-600'
-              }`}>
-                {item.risk.toLowerCase().includes('critical') ? 'Danger' : item.risk} Risk
-              </span>
-            </div>
-            <div className="flex-1">
-              <div className="flex justify-between items-start mb-2">
-                <h4 className="font-semibold text-minimal-ink">{item.summary}</h4>
-                {item.heartRate && (
-                  <span className="text-xs font-bold bg-minimal-bg px-2 py-1 rounded-lg border border-minimal-border">
-                    {item.heartRate} BPM
-                  </span>
-                )}
+        {filteredHistory.map((item) => {
+          const isDanger = item.risk.toLowerCase().includes('critical') || item.risk.toLowerCase().includes('danger') || item.risk.toLowerCase().includes('unknown');
+          const isHigh = item.risk.toLowerCase().includes('high');
+          const isModerate = item.risk.toLowerCase().includes('moderate') || item.risk.toLowerCase().includes('medium');
+          
+          return (
+            <div key={item.id} className={`p-6 rounded-3xl flex flex-col md:flex-row gap-6 items-start border shadow-sm transition-colors ${
+              isDanger ? 'bg-rose-50 border-rose-200' :
+              isHigh ? 'bg-red-50 border-red-200' :
+              isModerate ? 'bg-amber-50 border-amber-200' :
+              'bg-emerald-50 border-emerald-200'
+            }`}>
+              <div className="md:w-40 shrink-0">
+                <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${
+                  isDanger ? 'text-rose-700/60' : isHigh ? 'text-red-700/60' : isModerate ? 'text-amber-700/60' : 'text-emerald-700/60'
+                }`}>{item.source}</p>
+                <p className="text-sm font-semibold text-minimal-ink">
+                  {item.date.includes('T') && item.date.includes('Z') ? 
+                    new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) + ' ' + new Date(item.date).toLocaleDateString() : 
+                    item.date}
+                </p>
+                <span className={`text-[10px] font-bold uppercase tracking-widest inline-block px-2 py-0.5 rounded mt-2 ${
+                  isDanger ? 'bg-rose-600 text-white shadow-sm' :
+                  isHigh ? 'bg-red-600/10 text-red-700 border border-red-200/50' :
+                  isModerate ? 'bg-amber-600/10 text-amber-700 border border-amber-200/50' : 
+                  'bg-emerald-600/10 text-emerald-700 border border-emerald-200/50'
+                }`}>
+                  {isDanger ? 'Danger' : 
+                  item.risk.toLowerCase().includes('unknown') ? 'Unknown Risk' : 
+                  item.risk} {(!item.risk.toLowerCase().includes('risk') && !item.risk.toLowerCase().includes('unknown')) && 'Risk'}
+                </span>
               </div>
-              <p className="text-sm text-minimal-muted leading-relaxed">{item.advice}</p>
+              <div className="flex-1">
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-semibold text-minimal-ink">{item.summary}</h4>
+                  {item.heartRate && (
+                    <span className={`text-xs font-bold px-2 py-1 rounded-lg border ${
+                      isDanger ? 'bg-rose-100 border-rose-300 text-rose-800' :
+                      isHigh ? 'bg-red-100 border-red-300 text-red-800' :
+                      isModerate ? 'bg-amber-100 border-amber-300 text-amber-800' :
+                      'bg-emerald-100 border-emerald-300 text-emerald-800'
+                    }`}>
+                      {item.heartRate} BPM
+                    </span>
+                  )}
+                </div>
+                <p className={`text-sm leading-relaxed ${
+                  isDanger ? 'text-rose-950/70' : isHigh ? 'text-red-950/70' : isModerate ? 'text-amber-950/70' : 'text-emerald-950/70'
+                }`}>{item.advice}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         {history.length === 0 && (
-          <div className="py-20 text-center text-zinc-500 italic flex flex-col items-center gap-4">
+          <div className="py-20 text-center text-minimal-muted/60 italic flex flex-col items-center gap-4">
             <div className="w-16 h-16 bg-minimal-bg rounded-full flex items-center justify-center">
               <AlertTriangle size={24} className="text-minimal-muted" />
             </div>

@@ -56,7 +56,7 @@ export const AIRiskHighlight: React.FC<AIRiskHighlightProps> = ({
           </p>
           <button 
             onClick={onRefresh}
-            className="px-8 py-3 bg-white text-minimal-ink rounded-2xl font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all"
+            className="px-8 py-3 bg-white text-minimal-ink dark:bg-vital-400 dark:text-minimal-bg rounded-2xl font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all"
           >
             Sync Now
           </button>
@@ -110,7 +110,7 @@ export const AIRiskHighlight: React.FC<AIRiskHighlightProps> = ({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={onFindClinic}
-              className="mt-6 bg-white text-rose-600 px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-xl hover:shadow-white/20 transition-all group"
+              className="mt-6 bg-white text-rose-600 dark:bg-rose-600 dark:text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-xl hover:shadow-white/20 transition-all group"
             >
               <Stethoscope size={18} className="group-hover:rotate-12 transition-transform" /> 
               Find Nearest Clinic

@@ -20,6 +20,7 @@ export interface GraphAnalysisRequest {
   view: 'daily' | 'weekly' | 'monthly';
   data: any[];
   metric: string;
+  bmiData?: any[];
 }
 
 export interface GraphAnalysisResponse {

@@ -17,12 +17,19 @@ interface HealthChartsProps {
   chartView: 'daily' | 'weekly' | 'monthly';
   setChartView: (view: 'daily' | 'weekly' | 'monthly') => void;
   data: ChartData[];
+  activeMetric: MetricType;
+  setActiveMetric: (metric: MetricType) => void;
 }
 
 type MetricType = 'heartRate' | 'bloodPressure' | 'bloodGlucose' | 'bmi';
 
-export const HealthCharts: React.FC<HealthChartsProps> = ({ chartView, setChartView, data }) => {
-  const [activeMetric, setActiveMetric] = useState<MetricType>('heartRate');
+export const HealthCharts: React.FC<HealthChartsProps> = ({ 
+  chartView, 
+  setChartView, 
+  data,
+  activeMetric,
+  setActiveMetric
+}) => {
 
   const getMetricLabel = () => {
     switch (activeMetric) {
@@ -105,19 +112,19 @@ export const HealthCharts: React.FC<HealthChartsProps> = ({ chartView, setChartV
             <ResponsiveContainer width="100%" height="100%">
               {activeMetric === 'bloodPressure' ? (
                 <LineChart data={data}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F1F3" vertical={false} opacity={0.3} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-minimal-border)" vertical={false} opacity={0.15} />
                   <XAxis 
                     dataKey={chartView === 'daily' ? "hour" : "label"} 
-                    stroke="#A1A1AA" 
+                    stroke="var(--color-minimal-muted)" 
                     fontSize={10} 
                     fontWeight={700}
                     tickLine={false} 
                     axisLine={false} 
                     interval={chartView === 'monthly' ? 0 : (chartView === 'daily' ? 3 : 0)}
-                    padding={{ left: 10, right: 10 }}
+                    padding={{ left: 20, right: 20 }}
                   />
                   <YAxis 
-                    stroke="#A1A1AA" 
+                    stroke="var(--color-minimal-muted)" 
                     fontSize={10} 
                     fontWeight={700}
                     tickLine={false} 
@@ -125,7 +132,14 @@ export const HealthCharts: React.FC<HealthChartsProps> = ({ chartView, setChartV
                     domain={[60, 180]}
                   />
                   <Tooltip 
-                    contentStyle={{ background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.4)', borderRadius: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
+                    contentStyle={{ 
+                      background: 'var(--color-tooltip-bg)', 
+                      backdropFilter: 'blur(10px)', 
+                      border: '1px solid var(--color-card-border)', 
+                      borderRadius: '24px', 
+                      boxShadow: '0 20px 40px rgba(0,0,0,0.1)' 
+                    }}
+                    labelStyle={{ color: 'var(--color-minimal-ink)', fontWeight: 'bold', marginBottom: '4px' }}
                     itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
                     formatter={(value: any, name: string) => [`${value} mmHg`, name === 'systolic' ? 'Systolic' : 'Diastolic']}
                   />
@@ -137,40 +151,40 @@ export const HealthCharts: React.FC<HealthChartsProps> = ({ chartView, setChartV
                     dot={{ r: 4, fill: '#FF3B30', strokeWidth: 3, stroke: '#fff' }}
                     activeDot={{ r: 8, strokeWidth: 0 }}
                     connectNulls={true}
-                    animationDuration={1500}
+                    isAnimationActive={false}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="diastolic" 
-                    stroke="#007AFF" 
+                    stroke="#7EA0EA" 
                     strokeWidth={4}
-                    dot={{ r: 4, fill: '#007AFF', strokeWidth: 3, stroke: '#fff' }}
+                    dot={{ r: 4, fill: '#7EA0EA', strokeWidth: 3, stroke: '#fff' }}
                     activeDot={{ r: 8, strokeWidth: 0 }}
                     connectNulls={true}
-                    animationDuration={1500}
+                    isAnimationActive={false}
                   />
                 </LineChart>
               ) : (
                 <AreaChart data={data}>
                   <defs>
                     <linearGradient id="colorMetric" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={activeMetric === 'bloodGlucose' ? '#FF9F0A' : (activeMetric === 'bmi' ? '#10B981' : '#0EA5E9')} stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor={activeMetric === 'bloodGlucose' ? '#FF9F0A' : (activeMetric === 'bmi' ? '#10B981' : '#0EA5E9')} stopOpacity={0}/>
+                      <stop offset="5%" stopColor={activeMetric === 'bloodGlucose' ? '#A8BCFB' : (activeMetric === 'bmi' ? '#7EA0EA' : '#7EA0EA')} stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor={activeMetric === 'bloodGlucose' ? '#A8BCFB' : (activeMetric === 'bmi' ? '#7EA0EA' : '#7EA0EA')} stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F1F3" vertical={false} opacity={0.3} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-minimal-border)" vertical={false} opacity={0.15} />
                   <XAxis 
                     dataKey={chartView === 'daily' ? "hour" : "label"} 
-                    stroke="#A1A1AA" 
+                    stroke="var(--color-minimal-muted)" 
                     fontSize={10}
                     fontWeight={700}
                     tickLine={false} 
                     axisLine={false} 
                     interval={chartView === 'monthly' ? 0 : (chartView === 'daily' ? 3 : 0)}
-                    padding={{ left: 10, right: 10 }}
+                    padding={{ left: 20, right: 20 }}
                   />
                   <YAxis 
-                    stroke="#A1A1AA" 
+                    stroke="var(--color-minimal-muted)" 
                     fontSize={10} 
                     fontWeight={700}
                     tickLine={false} 
@@ -178,21 +192,34 @@ export const HealthCharts: React.FC<HealthChartsProps> = ({ chartView, setChartV
                     domain={activeMetric === 'bloodGlucose' ? [40, 200] : (activeMetric === 'bmi' ? [15, 45] : [40, 'auto'])}
                   />
                   <Tooltip 
-                    contentStyle={{ background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.4)', borderRadius: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
-                    itemStyle={{ fontSize: '12px', fontWeight: 'bold', color: activeMetric === 'bloodGlucose' ? '#FF9F0A' : (activeMetric === 'bmi' ? '#10B981' : '#0EA5E9') }}
+                    contentStyle={{ 
+                      background: 'var(--color-tooltip-bg)', 
+                      backdropFilter: 'blur(10px)', 
+                      border: '1px solid var(--color-card-border)', 
+                      borderRadius: '24px', 
+                      boxShadow: '0 20px 40px rgba(0,0,0,0.1)' 
+                    }}
+                    labelStyle={{ color: 'var(--color-minimal-ink)', fontWeight: 'bold', marginBottom: '4px' }}
+                    itemStyle={{ fontSize: '12px', fontWeight: 'bold', color: activeMetric === 'bloodGlucose' ? '#A8BCFB' : (activeMetric === 'bmi' ? '#7EA0EA' : '#7EA0EA') }}
                     formatter={(value: any) => [value ? `${value} ${getUnit()}` : '--', getMetricLabel()]}
                   />
                   <Area 
                     type="monotone" 
                     dataKey={activeMetric === 'heartRate' ? 'heartRate' : (activeMetric === 'bloodGlucose' ? 'glucose' : 'bmi')} 
-                    stroke={activeMetric === 'bloodGlucose' ? '#FF9F0A' : (activeMetric === 'bmi' ? '#10B981' : '#0EA5E9')} 
+                    stroke={activeMetric === 'bloodGlucose' ? '#A8BCFB' : (activeMetric === 'bmi' ? '#7EA0EA' : '#7EA0EA')} 
                     strokeWidth={4}
                     fillOpacity={1} 
                     fill="url(#colorMetric)"
                     connectNulls={true}
-                    dot={chartView !== 'monthly' ? { r: 5, fill: activeMetric === 'bloodGlucose' ? '#FF9F0A' : (activeMetric === 'bmi' ? '#10B981' : '#0EA5E9'), strokeWidth: 3, stroke: '#fff' } : false}
+                    dot={chartView !== 'monthly' ? { 
+                      r: 6, 
+                      fill: activeMetric === 'bloodGlucose' ? '#A8BCFB' : (activeMetric === 'bmi' ? '#7EA0EA' : '#7EA0EA'), 
+                      strokeWidth: 2, 
+                      stroke: '#fff',
+                      opacity: 1
+                    } : false}
                     activeDot={{ r: 8, strokeWidth: 0 }}
-                    animationDuration={1500}
+                    isAnimationActive={false}
                   />
                 </AreaChart>
               )}

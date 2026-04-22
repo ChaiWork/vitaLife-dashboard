@@ -38,7 +38,7 @@ export const StatCard: React.FC<StatCardProps> = ({ label, value, unit, status, 
       <div className="flex justify-between items-start mb-6 relative z-10">
         <div className="flex items-center gap-2">
           {icon && (
-            <div className={`p-2 rounded-xl backdrop-blur-md bg-white/40 ring-1 ring-white/20 
+            <div className={`p-2 rounded-xl backdrop-blur-md bg-white/40 ring-1 ring-white/20
               ${isDanger ? 'text-red-500' : isWarning ? 'text-amber-500' : 'text-minimal-blue'}`}>
               {icon}
             </div>
@@ -58,7 +58,7 @@ export const StatCard: React.FC<StatCardProps> = ({ label, value, unit, status, 
           <span className="text-[10px] font-bold text-minimal-muted/60 uppercase tracking-widest translate-y-[-2px]">{unit}</span>
         </div>
         
-        {showECG && <ECGHeartbeat color={pulseColor || (isDanger ? '#ef4444' : '#0EA5E9')} className="translate-y-[-8px] opacity-80" />}
+        {showECG && <ECGHeartbeat color={pulseColor || (isDanger ? '#ef4444' : '#7EA0EA')} className="translate-y-[-8px] opacity-80" />}
       </div>
 
       {status && (

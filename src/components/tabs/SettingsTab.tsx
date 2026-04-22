@@ -1,15 +1,13 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Moon, Sun, Type, Eye, Shield, Bell } from 'lucide-react';
+import { Sun, Type, Eye, Shield, Bell } from 'lucide-react';
 
 interface SettingsTabProps {
-  theme: 'light' | 'dark';
-  setTheme: (theme: 'light' | 'dark') => void;
   fontSize: 'small' | 'medium' | 'large';
   setFontSize: (size: 'small' | 'medium' | 'large') => void;
 }
 
-export const SettingsTab: React.FC<SettingsTabProps> = ({ theme, setTheme, fontSize, setFontSize }) => {
+export const SettingsTab: React.FC<SettingsTabProps> = ({ fontSize, setFontSize }) => {
   return (
     <motion.div
       key="settings"
@@ -29,31 +27,15 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ theme, setTheme, fontS
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Appearance Section */}
-        <section className={`glass-panel p-8 rounded-[40px] space-y-6 ${theme === 'dark' ? 'bg-[#121212] border-white/5' : ''}`}>
+        <section className="glass-panel p-8 rounded-[40px] space-y-6">
           <div className="flex items-center gap-3 mb-2">
-            <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-minimal-blue/20 text-minimal-blue' : 'bg-minimal-blue/10 text-minimal-blue'}`}>
+            <div className="p-2 rounded-lg bg-minimal-blue/10 text-minimal-blue">
               <Sun size={20} />
             </div>
             <h3 className="text-lg font-bold">Appearance</h3>
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-minimal-bg rounded-2xl border border-minimal-border">
-              <div className="flex items-center gap-3">
-                <Moon size={18} className="text-minimal-muted" />
-                <div>
-                  <p className="text-sm font-bold">Dark Mode</p>
-                  <p className="text-[10px] text-minimal-muted uppercase font-bold tracking-tight">Switch between light and dark themes</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                className={`w-12 h-6 rounded-full relative transition-colors ${theme === 'dark' ? 'bg-minimal-blue' : 'bg-minimal-border'}`}
-              >
-                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${theme === 'dark' ? 'left-7' : 'left-1'}`} />
-              </button>
-            </div>
-
             <div className="space-y-3">
               <div className="flex items-center gap-2 px-1">
                 <Type size={16} className="text-minimal-muted" />
@@ -67,7 +49,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ theme, setTheme, fontS
                     className={`py-2 rounded-xl text-xs font-bold transition-all border ${
                       fontSize === size 
                         ? 'bg-minimal-ink text-white border-minimal-ink' 
-                        : 'bg-white text-minimal-muted border-minimal-border hover:border-minimal-muted shadow-sm'
+                        : 'bg-minimal-white text-minimal-muted border-minimal-border hover:border-minimal-muted shadow-sm'
                     }`}
                   >
                     {size.charAt(0).toUpperCase() + size.slice(1)}
@@ -79,10 +61,10 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ theme, setTheme, fontS
         </section>
 
         {/* Accessibility Features */}
-        <section className={`glass-panel p-8 rounded-[40px] space-y-6 ${theme === 'dark' ? 'bg-[#121212] border-white/5' : ''}`}>
+        <section className="glass-panel p-8 rounded-[40px] space-y-6">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
+              <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
                 <Eye size={20} />
               </div>
               <h3 className="text-lg font-bold">Accessibility</h3>

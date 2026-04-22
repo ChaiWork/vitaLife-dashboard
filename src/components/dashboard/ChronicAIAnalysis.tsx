@@ -94,7 +94,7 @@ export const ChronicAIAnalysis: React.FC<ChronicAIAnalysisProps> = ({ analysis, 
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-minimal-bg/40 p-5 rounded-2xl border border-minimal-border/50">
+                <div className="bg-minimal-bg/40 dark:bg-white/5 p-5 rounded-2xl border border-minimal-border/50 dark:border-white/10">
                   <p className="text-[10px] font-bold text-minimal-muted uppercase tracking-widest mb-2">Clinical Summary</p>
                   <p className="text-sm text-minimal-ink leading-relaxed font-medium">
                     {analysis.summary}

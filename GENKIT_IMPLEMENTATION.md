@@ -56,14 +56,14 @@ export const chronicAnalysisFlow = defineFlow(
     `;
 
     const llmResponse = await run('call-llm', async () => {
-      const result = await generate({
-        model: gemini15Flash,
+      const result = await ai.generate({
+        model: "googleai/gemini-2.5-flash",
         prompt: prompt,
         config: {
           temperature: 0.2,
         },
       });
-      return result.toJSON();
+      return result.output;
     });
 
     // Parse and return the structured data
