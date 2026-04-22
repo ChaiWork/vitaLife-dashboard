@@ -61,7 +61,6 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ user, profile }) =
     todayStats, dailyBreakdown, periodicTrends, unifiedHistory,
     heartLogs, chronicLogs, bmiLogs, aiInsights, chronicles,
     notifications, familyLinks, riskHistory,
-    generateHeartAnalysis,
     generateChronicAnalysis,
     saveManualVitals,
     simulateHeartRate,
@@ -79,8 +78,7 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ user, profile }) =
   };
 
   const refreshData = () => {
-    // Logic to force re-fetch or just trigger analysis
-    generateHeartAnalysis();
+    // Only chronic analysis reloads from the website
     generateChronicAnalysis();
   };
 
@@ -115,7 +113,7 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ user, profile }) =
             lastAnalysisTime={lastAnalysisTime}
             notifications={notifications}
             onToggleNotifications={() => setIsNotificationOpen(true)}
-            onRunAI={generateHeartAnalysis}
+            onRunAI={generateChronicAnalysis}
             onRefresh={refreshData}
             onManualLog={() => setIsManualEntryOpen(true)}
             onSimulateLog={simulateHeartRate}
@@ -137,19 +135,15 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ user, profile }) =
               <motion.div key="dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-8">
                 <StatGrid todayStats={todayStats} profile={profile} />
                 <AIRiskHighlight 
-                  latestRisk={heartAnalysis?.risk || aiInsights[0]?.risk || 'Normal'}
-                  summary={heartAnalysis?.summary || aiInsights[0]?.summary || 'AI Intelligence: Your vital signs are generally within healthy ranges.'}
-                  advice={heartAnalysis?.advice || aiInsights[0]?.advice || 'Precision Advice: Maintain optimal hydration.'}
+                  latestRisk={aiInsights[0]?.risk || 'Normal'}
+                  summary={aiInsights[0]?.summary || 'Heart Intelligence: Your vital signs are generally within healthy ranges.'}
+                  advice={aiInsights[0]?.advice || 'Precision Advice: Maintain optimal hydration.'}
                   isAnalyzing={isAnalyzing}
-                  needsSync={!heartAnalysis && todayStats.hasDataToday && (todayStats.lastLogTime > (lastAnalysisTime?.getTime() || 0))}
-                  onRefresh={refreshData}
                   onFindClinic={findNearestClinic}
                 />
                 <ChronicAIAnalysis 
                   analysis={chronicAnalysis || chronicles[0]}
                   isAnalyzing={isChronicAnalyzing}
-                  needsSync={!chronicAnalysis && !chronicles[0] && todayStats.hasDataToday && (todayStats.lastLogTime > (lastAnalysisTime?.getTime() || 0))}
-                  onSync={refreshData}
                   onAnalyze={generateChronicAnalysis}
                 />
                 <HealthCharts 

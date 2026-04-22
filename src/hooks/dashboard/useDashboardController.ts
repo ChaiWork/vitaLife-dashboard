@@ -128,10 +128,12 @@ export function useDashboardController(user: AuthUser, profile: UserProfile | nu
       const result = await callGeminiAnalysis(vitals, profile);
       setChronicAnalysis(result);
       
+      // Separate collection for chronic to "wait for manual" logic
       const insightRef = doc(collection(db, 'users', user.uid, 'chronic_vitals_insights'));
       await setDoc(insightRef, {
         ...vitals,
         ...result,
+        source: 'Chronic Manual Log',
         createdAt: serverTimestamp()
       });
 
@@ -334,7 +336,6 @@ export function useDashboardController(user: AuthUser, profile: UserProfile | nu
     notifications, familyLinks, riskHistory,
     
     // Actions
-    generateHeartAnalysis,
     generateChronicAnalysis,
     saveManualVitals,
     simulateHeartRate,

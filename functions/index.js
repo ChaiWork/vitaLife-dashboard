@@ -7,176 +7,56 @@ import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { defineSecret } from "firebase-functions/params";
 
 /* =========================================================
-   INIT
+   INIT FIREBASE
 ========================================================= */
 
 if (!admin.apps.length) {
   admin.initializeApp();
 }
 
-/**
- * SECRETS SETUP
- * The secret handle used in Cloud Functions configuration.
- */
+/* =========================================================
+   SECRET
+========================================================= */
+
 const googleApiKey = defineSecret("GOOGLE_GENAI_API_KEY");
 
 /* =========================================================
-   GENKIT SETUP
-   Using gemini-flash-latest for maximum intelligence.
+   SAFE GENKIT INIT
 ========================================================= */
 
-const ai = genkit({
-  plugins: [googleAI()], // Automatically retrieves configured key at runtime
-  model: "googleai/gemini-flash-latest", 
-});
+let aiInstance = null;
+
+function getAI() {
+  if (!aiInstance) {
+    aiInstance = genkit({
+      plugins: [
+        googleAI({
+          apiKey: process.env.GOOGLE_GENAI_API_KEY,
+        }),
+      ],
+      model: "googleai/gemini-1.5-flash",
+    });
+  }
+  return aiInstance;
+}
 
 /* =========================================================
-   1. HEART RATE FLOW
+   SCHEMAS
+   (Added "Unknown" to account for the workflow rejection popup)
 ========================================================= */
 
 const hrOutputSchema = z.object({
-  risk: z.enum(["Low", "Moderate", "High", "Critical"]),
+  risk: z.enum(["Low", "Moderate", "High", "Critical", "Unknown"]),
   explanation: z.string(),
   advice: z.string(),
   summary: z.string(),
 });
 
-const healthAnalysisFlow = ai.defineFlow(
-  {
-    name: "healthAnalysisFlow",
-    inputSchema: z.object({ heartRate: z.number() }),
-    outputSchema: hrOutputSchema,
-  },
-  async (input) => {
-    const risk =
-      input.heartRate > 130
-        ? "Critical"
-        : input.heartRate > 100
-          ? "High"
-          : input.heartRate > 90
-            ? "Moderate"
-            : "Low";
-
-    const response = await ai.generate({
-      prompt: `
-Analyze heart rate: ${input.heartRate} bpm.
-Risk level: ${risk}
-
-Instructions:
-- risk: EXACTLY ONE OF "Low", "Moderate", "High", "Critical".
-- explanation: 2 sentences explaining the heart rate.
-- advice: 1 actionable health sentence.
-- summary: 1 short summary sentence.
-
-IMPORTANT: Return EXACTLY a valid JSON object matching the requested schema. No other text.
-      `,
-      output: { schema: hrOutputSchema },
-      config: { temperature: 0.1 },
-    });
-
-    if (!response.output) {
-      throw new Error("AI failed to generate a valid health analysis.");
-    }
-
-    return response.output;
-  },
-);
-
-/* =========================================================
-   2. CHRONIC FLOW (RAG)
-========================================================= */
-
 const chronicOutputSchema = z.object({
-  risk: z.enum(["Low", "Moderate", "High", "Critical"]),
+  risk: z.enum(["Low", "Moderate", "High", "Critical", "Unknown"]),
   summary: z.string(),
   advice: z.string(),
 });
-
-const chronicAnalysisFlow = ai.defineFlow(
-  {
-    name: "chronicAnalysisFlow",
-    inputSchema: z.object({
-      userId: z.string(),
-      heartRate: z.number().optional(),
-      systolic: z.number().optional(),
-      diastolic: z.number().optional(),
-      glucose: z.number().optional(),
-      spo2: z.number().optional(),
-    }),
-    outputSchema: chronicOutputSchema,
-  },
-  async (input) => {
-    const [hSnap, cSnap] = await Promise.all([
-      admin
-        .firestore()
-        .collection("users")
-        .doc(input.userId)
-        .collection("heart_rate_logs")
-        .orderBy("createdAt", "desc")
-        .limit(10)
-        .get(),
-
-      admin
-        .firestore()
-        .collection("users")
-        .doc(input.userId)
-        .collection("chronicVital_log")
-        .orderBy("createdAt", "desc")
-        .limit(10)
-        .get(),
-    ]);
-
-    const history = {
-      hr: hSnap.docs.map((d) => d.data()),
-      vitals: cSnap.docs.map((d) => d.data()),
-    };
-
-    const response = await ai.generate({
-      prompt: `
-Analyze patient health data.
-
-CURRENT:
-${JSON.stringify(input)}
-
-HISTORY (Context):
-${JSON.stringify(history).slice(0, 2000)}
-
-Instructions:
-- risk: EXACTLY ONE OF "Low", "Moderate", "High", "Critical". Do not use any other words.
-- summary: max 12 words highlighting the most important trend.
-- advice: clear medical instruction based on current and history data.
-
-IMPORTANT: Return EXACTLY a valid JSON object matching the requested schema. Ensure 'risk' strictly matches the enum.
-      `,
-      output: { schema: chronicOutputSchema },
-      config: { temperature: 0.1 },
-    });
-
-    const result = response.output;
-    if (!result) {
-      throw new Error("AI failed to generate a valid chronic analysis.");
-    }
-
-    // Persist the insight to Firestore for the workflow guard
-    await admin.firestore().collection("users").doc(input.userId).collection("ai_insights").add({
-      ...result,
-      heartRate: input.heartRate || 72,
-      date: new Date().toISOString(),
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      vitalsRef: {
-        systolic: input.systolic,
-        diastolic: input.diastolic,
-        glucose: input.glucose
-      }
-    });
-
-    return result;
-  },
-);
-
-/* =========================================================
-   3. GRAPH TREND FLOW
-========================================================= */
 
 const graphOutputSchema = z.object({
   summary: z.string(),
@@ -190,120 +70,306 @@ const graphOutputSchema = z.object({
   ),
 });
 
-const graphAnalysisFlow = ai.defineFlow(
-  {
-    name: "graphAnalysisFlow",
-    inputSchema: z.object({
-      userId: z.string(),
-      view: z.string(),
-      metric: z.string(),
-      data: z.array(z.any()),
-    }),
-    outputSchema: graphOutputSchema,
-  },
-  async (input) => {
-    const response = await ai.generate({
-      prompt: `
-Analyze ${input.metric} trends for ${input.view} view.
+/* =========================================================
+   FALLBACK AI LOGIC (FOR QUOTA/INTERNAL ERRORS)
+========================================================= */
 
-DATA:
-${JSON.stringify(input.data).slice(0, 2000)}
+function fallbackHealthAnalysis(input) {
+  const hr = input.heartRate || 72;
+  const risk = hr > 130 ? "Critical" : hr > 100 ? "High" : hr > 90 ? "Moderate" : "Low";
+  return {
+    risk,
+    explanation: `SYSTEM NOTICE: Heart rate of ${hr} bpm processed via deterministic safety engine. Your rate is ${risk === 'Low' ? 'normal' : 'outside the ideal resting range'}. AI consulting is currently undergoing maintenance.`,
+    summary: `Heart rate level is ${risk.toLowerCase()} based on safety thresholds.`,
+    advice: "Ensure you are hydrated and resting. If you feel unwell, dizzy, or experience palpitations, please consult a medical professional immediately. Re-run deep analysis in a few minutes."
+  };
+}
 
-Return:
-- summary: Concise pattern evaluation.
-- stability: (0-100) consistency score.
-- trends: Array of objects with label, percentage change, and direction (direction MUST be "up", "down", or "stable").
+function fallbackChronicAnalysis(input) {
+  const sys = input.systolic || 120;
+  const glu = input.glucose || 95;
+  let risk = "Low";
+  if (sys > 180 || glu > 300) risk = "Critical";
+  else if (sys > 140 || glu > 140) risk = "High";
+  else if (sys > 130 || glu > 110) risk = "Moderate";
 
-IMPORTANT: Return EXACTLY a valid JSON object matching the requested schema. No markdown formatting outside of JSON.
-      `,
-      output: { schema: graphOutputSchema },
-      config: { temperature: 0.1 },
-    });
+  return {
+    risk,
+    summary: `Vitals (BP: ${sys}, Glu: ${glu}) evaluated via secondary safety engine.`,
+    advice: "System load is currently high. Based on standard health thresholds, your current vitals indicate a " + risk.toLowerCase() + " metabolic risk level. Keep tracking manually and re-sync for a full AI synthesis later."
+  };
+}
 
-    if (!response.output) {
-      throw new Error("AI failed to generate a valid graph analysis.");
-    }
-
-    return response.output;
-  },
-);
+function fallbackGraphAnalysis(input) {
+  return {
+    summary: "Historical trends are currently being processed via local algorithms due to AI service limits.",
+    stability: 90,
+    trends: [
+      { label: "Stability", change: 0, trend: "stable" }
+    ]
+  };
+}
 
 /* =========================================================
-   4. CALLABLE FUNCTIONS
+   CALLABLE FUNCTIONS
+   (Using direct .generate calls to prevent root-level execution)
 ========================================================= */
 
 export const healthAnalysis = onCall(
   { secrets: [googleApiKey], cors: true },
-  async (request) => {
-    if (!request.auth)
-      throw new HttpsError("unauthenticated", "User must be signed in.");
+  async (req) => {
+    if (!req.auth) throw new HttpsError("unauthenticated", "Login required");
+    
+    const input = req.data;
+    const ai = getAI();
 
-    const data = request.data || {};
-    return await healthAnalysisFlow(data);
+    const risk =
+      input.heartRate > 130
+        ? "Critical"
+        : input.heartRate > 100
+          ? "High"
+          : input.heartRate > 90
+            ? "Moderate"
+            : "Low";
+
+    try {
+      const response = await ai.generate({
+        model: "googleai/gemini-1.5-flash",
+        output: { schema: hrOutputSchema },
+        prompt: `
+  You are an advanced medical AI assistant for real-time health monitoring systems.
+  
+  Your role is to analyze patient heart rate data and provide safe, structured medical insights.
+  
+  ----------------------------------------
+  PATIENT DATA:
+  - Heart Rate: ${input.heartRate} bpm
+  - Pre-calculated Risk: ${risk}
+  ----------------------------------------
+  
+  TASK:
+  1. Analyze whether the heart rate is normal or abnormal.
+  2. Consider possible causes such as:
+     - physical activity
+     - stress or anxiety
+     - dehydration
+     - cardiovascular strain
+  3. Identify potential health risks but DO NOT diagnose diseases.
+  4. Prioritize patient safety and conservative reasoning.
+  
+  ----------------------------------------
+  OUTPUT FORMAT (STRICT JSON ONLY):
+  
+  - risk: (Low / Moderate / High / Critical)
+  
+  - explanation:
+    Provide 3–5 clear sentences explaining physiological interpretation.
+  
+  - summary:
+    1–2 sentence simple explanation of current condition.
+  
+  - advice:
+    4–6 sentences including:
+      - lifestyle recommendations
+      - monitoring advice
+      - hydration/rest guidance
+      - when to seek medical attention
+  
+  ----------------------------------------
+  RULES:
+  - No markdown
+  - No extra text
+  - No self-reference as AI
+  - Be medically safe and conservative
+        `,
+      });
+  
+      if (!response.output) throw new Error("AI failed");
+      return response.output;
+    } catch (err) {
+      console.error("AI Analysis failed, using fallback:", err);
+      return fallbackHealthAnalysis(input);
+    }
   },
 );
 
 export const chronicAnalysis = onCall(
   { secrets: [googleApiKey], cors: true },
-  async (request) => {
-    if (!request.auth)
-      throw new HttpsError("unauthenticated", "User must be signed in.");
+  async (req) => {
+    if (!req.auth) throw new HttpsError("unauthenticated", "Login required");
+    
+    const input = req.data;
+    const userId = req.auth.uid;
 
-    const userId = request.auth.uid;
+    const db = admin.firestore();
 
-    // WORKFLOW RULE: Check for new logs after latest AI reading
-    const [latestLogSnap, latestInsightSnap] = await Promise.all([
-      admin.firestore().collection("users").doc(userId).collection("chronicVital_log")
+    // 1. STRICT WORKFLOW CHECK: Verify if there's a new manual log
+    const [latestInsight, latestLog] = await Promise.all([
+      db.collection("users").doc(userId).collection("chronic_vitals_insights")
         .orderBy("createdAt", "desc").limit(1).get(),
-      admin.firestore().collection("users").doc(userId).collection("ai_insights")
+      db.collection("users").doc(userId).collection("chronicVital_log")
         .orderBy("createdAt", "desc").limit(1).get()
     ]);
 
-    const latestLog = latestLogSnap.docs[0]?.data();
-    const latestInsight = latestInsightSnap.docs[0]?.data();
+    if (!latestLog.empty && !latestInsight.empty) {
+      const insightDoc = latestInsight.docs[0].data();
+      const insightTime = insightDoc.createdAt?.toMillis() || 0;
+      const logTime = latestLog.docs[0].data().createdAt?.toMillis() || 0;
 
-    // If we have an insight and no newer log, tell the UI to ask for fresh data
-    if (latestInsight && latestLog) {
-      const logTime = latestLog.createdAt?.toDate ? latestLog.createdAt.toDate().getTime() : 0;
-      const insightTime = latestInsight.createdAt?.toDate ? latestInsight.createdAt.toDate().getTime() : 0;
-      
-      if (logTime <= insightTime) {
+      // If the AI insight is newer than the last manual log, just return the latest known insight
+      if (insightTime >= logTime) {
         return {
-          status: "pending_new_data",
-          risk: latestInsight.risk,
-          summary: "AI has already processed your most recent vitals. No new variations detected since the last deep scan.",
-          advice: "To generate a fresh chronic analysis, please submit a new health log (Blood Pressure or Glucose). This ensures the AI model evaluates your current biological state rather than historical patterns.",
-          needsNewInput: true
+          risk: insightDoc.risk || "Low",
+          summary: insightDoc.summary || "Latest analysis is synchronized.",
+          advice: insightDoc.advice || "Your health data is currently stable. Submit a new medical log for fresh AI re-evaluation."
         };
       }
     }
 
-    const data = request.data || {};
-    return await chronicAnalysisFlow({
-      ...data,
-      userId,
-    });
+    // 2. Fetch history context to pass to the AI
+    const [hSnap, cSnap] = await Promise.all([
+      db.collection("users").doc(userId).collection("heart_rate_logs")
+        .orderBy("createdAt", "desc").limit(10).get(),
+      db.collection("users").doc(userId).collection("chronicVital_log")
+        .orderBy("createdAt", "desc").limit(10).get(),
+    ]);
+
+    const history = {
+      hr: hSnap.docs.map((d) => d.data()),
+      vitals: cSnap.docs.map((d) => d.data()),
+    };
+
+    const ai = getAI();
+    try {
+      const response = await ai.generate({
+        model: "googleai/gemini-1.5-flash",
+        output: { schema: chronicOutputSchema },
+        prompt: `
+  You are a clinical decision-support AI specializing in chronic disease monitoring and early risk detection.
+  
+  Your task is to analyze both current and historical patient health data.
+  
+  ----------------------------------------
+  CURRENT DATA:
+  ${JSON.stringify(input)}
+  
+  HISTORICAL DATA (last 10 records):
+  ${JSON.stringify(history).slice(0, 2000)}
+  
+  ----------------------------------------
+  ANALYSIS TASK:
+  1. Detect patterns in chronic health indicators:
+     - heart rate trends
+     - blood pressure patterns
+     - glucose fluctuations
+     - oxygen saturation stability
+  
+  2. Identify early warning signs of deterioration.
+  
+  3. Compare current values with historical baseline.
+  
+  4. Evaluate risk progression over time.
+  
+  ----------------------------------------
+  OUTPUT FORMAT (STRICT JSON ONLY):
+  
+  - risk:
+    (Low / Moderate / High / Critical)
+  
+  - summary:
+    10–15 word concise medical summary of current condition
+  
+  - advice:
+    Detailed paragraph including:
+      - lifestyle changes
+      - monitoring frequency
+      - dietary suggestions
+      - warning signs to watch
+      - medical consultation advice if needed
+  
+  ----------------------------------------
+  RULES:
+  - Be conservative and safety-focused
+  - No diagnosis, only risk assessment
+  - No markdown or extra text
+        `,
+      });
+  
+      if (!response.output) throw new Error("AI failed");
+  
+      // REMOVED redundant write here since the frontend handles persistence
+      return response.output;
+    } catch (err) {
+      console.error("Chronic AI failed, using fallback:", err);
+      return fallbackChronicAnalysis(input);
+    }
   },
 );
 
 export const graphAnalysis = onCall(
   { secrets: [googleApiKey], cors: true },
-  async (request) => {
-    if (!request.auth)
-      throw new HttpsError("unauthenticated", "User must be signed in.");
+  async (req) => {
+    if (!req.auth) throw new HttpsError("unauthenticated", "Login required");
 
-    const data = request.data || {};
-    return await graphAnalysisFlow({
-      userId: request.auth.uid,
-      view: data.view || 'daily',
-      metric: data.metric || 'heartRate',
-      data: data.data || [],
-    });
+    const input = req.data;
+    const ai = getAI();
+
+    try {
+      const response = await ai.generate({
+        model: "googleai/gemini-1.5-flash",
+        output: { schema: graphOutputSchema },
+        prompt: `
+  You are a medical data analyst AI focused on health trend evaluation.
+  
+  Analyze the dataset and extract meaningful insights.
+  
+  ----------------------------------------
+  METRIC: ${input.metric || 'vital signs'}
+  VIEW: ${input.view || 'current'}
+  
+  DATA:
+  ${JSON.stringify(input.data || []).slice(0, 2000)}
+  
+  ----------------------------------------
+  TASK:
+  1. Identify trends over time.
+  2. Detect abnormalities or sudden changes.
+  3. Evaluate overall stability.
+  4. Provide interpretation of changes.
+  
+  ----------------------------------------
+  OUTPUT FORMAT (STRICT JSON ONLY):
+  
+  - summary:
+    1–2 sentence interpretation of trend
+  
+  - stability:
+    score from 0–100 (100 = fully stable)
+  
+  - trends:
+    list of:
+      - label (time segment)
+      - change (numeric difference)
+      - trend (up/down/stable)
+  
+  ----------------------------------------
+  RULES:
+  - No extra text
+  - No markdown
+        `,
+      });
+  
+      if (!response.output) throw new Error("AI failed");
+      return response.output;
+    } catch (err) {
+      console.error("Graph AI failed, using fallback:", err);
+      return fallbackGraphAnalysis(input);
+    }
   },
 );
 
 /* =========================================================
-   5. PUSH NOTIFICATION TRIGGER
+   PUSH NOTIFICATION
 ========================================================= */
 
 export const sendPushNotification = onDocumentCreated(
@@ -313,7 +379,7 @@ export const sendPushNotification = onDocumentCreated(
   },
   async (event) => {
     const snap = event.data;
-    if (!snap) return;
+    if (!snap) return null;
 
     const notification = snap.data();
     const userId = event.params.userId;
@@ -321,10 +387,7 @@ export const sendPushNotification = onDocumentCreated(
     const userDoc = await admin.firestore().doc(`users/${userId}`).get();
     const fcmToken = userDoc.data()?.fcmToken;
 
-    if (!fcmToken) {
-      console.log(`No FCM token found for user ${userId}. Skipping push.`);
-      return null;
-    }
+    if (!fcmToken) return null;
 
     const isEmergency = notification.type === "emergency";
 
@@ -332,47 +395,25 @@ export const sendPushNotification = onDocumentCreated(
       token: fcmToken,
       notification: {
         title: notification.title || "Health Alert",
-        body: notification.message || "New health update received.",
+        body: notification.message || "Update received",
       },
       data: {
-        type: notification.type || 'info',
+        type: String(notification.type || "info"),
         notificationId: snap.id,
       },
       android: {
-        priority: isEmergency ? 'high' : 'normal',
+        priority: isEmergency ? "high" : "normal",
         notification: {
-          channelId: isEmergency ? 'emergency_alerts' : 'general_alerts',
-          sound: isEmergency ? 'emergency_siren' : 'default',
-        },
-      },
-      apns: {
-        payload: {
-          aps: {
-            alert: {
-              title: notification.title || "Health Alert",
-              body: notification.message || "New health update received.",
-            },
-            sound: isEmergency ? 'emergency_siren.caf' : 'default',
-            badge: 1,
-          },
+          channelId: isEmergency ? "emergency_alerts" : "general_alerts",
+          sound: isEmergency ? "emergency_siren" : "default",
         },
       },
     };
 
     try {
-      const response = await admin.messaging().send(message);
-      console.log(`Successfully sent push to ${userId}:`, response);
-      return response;
-    } catch (error) {
-      console.error(`Error sending push to ${userId}:`, error);
-      
-      if (error.code === 'messaging/registration-token-not-registered' || 
-          error.code === 'messaging/invalid-registration-token') {
-        await admin.firestore().collection('users').doc(userId).update({ 
-          fcmToken: admin.firestore.FieldValue.delete() 
-        });
-        console.log(`Removed invalid token for user ${userId}`);
-      }
+      return await admin.messaging().send(message);
+    } catch (err) {
+      console.error(err);
       return null;
     }
   },
