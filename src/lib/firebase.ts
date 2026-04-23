@@ -26,6 +26,7 @@ import {
   getDocs,
   getDocFromServer,
   getDocsFromServer,
+  addDoc,
   Timestamp,
   serverTimestamp
 } from 'firebase/firestore';
@@ -122,6 +123,7 @@ export {
   onSnapshot,
   getDocs,
   getDocsFromServer,
+  addDoc,
   Timestamp,
   serverTimestamp
 };

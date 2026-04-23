@@ -1,10 +1,10 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { LayoutDashboard, Users, History, HeartHandshake, LogOut, Activity, Settings as SettingsIcon } from 'lucide-react';
+import { LayoutDashboard, Users, History, HeartHandshake, LogOut, Activity, Settings as SettingsIcon, Brain } from 'lucide-react';
 
 interface SidebarProps {
-  activeTab: 'dashboard' | 'history' | 'profile' | 'caregiver' | 'settings';
-  setActiveTab: (tab: 'dashboard' | 'history' | 'profile' | 'caregiver' | 'settings') => void;
+  activeTab: 'dashboard' | 'history' | 'profile' | 'caregiver' | 'settings' | 'aiHistory';
+  setActiveTab: (tab: 'dashboard' | 'history' | 'profile' | 'caregiver' | 'settings' | 'aiHistory') => void;
   onLogout: () => void;
   userRole?: string;
 }
@@ -46,6 +46,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLog
           label="Records"
         />
         <NavButton 
+          active={activeTab === 'aiHistory'} 
+          onClick={() => setActiveTab('aiHistory')} 
+          icon={<Brain size={20} />}
+          label="Graph Record"
+        />
+        <NavButton 
           active={activeTab === 'settings'} 
           onClick={() => setActiveTab('settings')} 
           icon={<SettingsIcon size={20} />}
@@ -76,7 +82,7 @@ interface NavButtonProps {
 const NavButton: React.FC<NavButtonProps> = ({ active, onClick, icon, label }) => (
   <button 
     onClick={onClick}
-    className={`w-full flex flex-col items-center justify-center gap-1.5 py-4 rounded-2xl transition-all group relative ${
+    className={`w-full flex flex-col items-center justify-center gap-1 py-4 rounded-2xl transition-all group relative min-h-[72px] ${
       active 
         ? 'bg-minimal-blue/10 text-minimal-blue shadow-sm ring-1 ring-minimal-blue/10'
         : 'text-minimal-muted hover:bg-minimal-bg hover:text-minimal-ink'
@@ -88,10 +94,14 @@ const NavButton: React.FC<NavButtonProps> = ({ active, onClick, icon, label }) =
         className="absolute left-0 w-1 h-6 bg-minimal-blue rounded-r-full"
       />
     )}
-    <div className={`transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>
+    <div className={`transition-transform duration-300 ${active ? 'scale-100 mb-1' : 'group-hover:scale-100 group-hover:mb-1'}`}>
       {icon}
     </div>
-    <span className={`text-[10px] font-black uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity absolute -bottom-1 ${active ? 'opacity-60 !bottom-1.5' : ''}`}>
+    <span className={`text-[8px] leading-tight font-black uppercase tracking-widest text-center px-1 transition-all duration-300 ${
+      active 
+        ? 'opacity-60 translate-y-0 h-auto' 
+        : 'opacity-0 translate-y-1 h-0 group-hover:opacity-100 group-hover:translate-y-0 group-hover:h-auto'
+    }`}>
       {label}
     </span>
   </button>

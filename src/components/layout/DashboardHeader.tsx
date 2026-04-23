@@ -57,7 +57,13 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   return (
     <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
       <div className="flex-1">
-        <h1 className="text-4xl font-display font-bold tracking-tight text-minimal-ink mb-2">Health Dashboard</h1>
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 bg-vital-400/10 text-vital-400 rounded-xl">
+             <Activity size={24} />
+          </div>
+          <h1 className="text-4xl font-display font-bold tracking-tight text-minimal-ink">VitaLife Assistant</h1>
+        </div>
+        <p className="text-xs font-bold text-minimal-muted/60 uppercase tracking-[0.2em] mb-3">AI-Powered Health Analytics & Companion</p>
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-3 text-minimal-muted text-sm font-medium">
             <div className={`w-2.5 h-2.5 rounded-full ${isSyncing ? 'bg-minimal-blue animate-pulse' : 'bg-vital-400 shadow-[0_0_8px_rgba(126,160,234,0.4)]'}`} />

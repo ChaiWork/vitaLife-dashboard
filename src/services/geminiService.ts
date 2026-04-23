@@ -31,6 +31,8 @@ export interface GraphAnalysisResponse {
     change: number; // percentage
     trend: 'up' | 'down' | 'stable';
   }[];
+  prediction: string;
+  advice: string;
 }
 
 /**

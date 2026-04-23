@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface HistoryItem {
   id: string;
@@ -16,13 +16,30 @@ interface HistoryTabProps {
   history: HistoryItem[];
 }
 
+const ITEMS_PER_PAGE = 5;
+
 export const HistoryTab: React.FC<HistoryTabProps> = ({ history }) => {
   const [filter, setFilter] = React.useState<'all' | 'low' | 'moderate' | 'high' | 'critical'>('all');
+  const [currentPage, setCurrentPage] = React.useState(1);
 
   const filteredHistory = React.useMemo(() => {
-    if (filter === 'all') return history;
-    return history.filter(item => item.risk.toLowerCase().includes(filter));
+    let result = history;
+    if (filter !== 'all') {
+      result = history.filter(item => item.risk.toLowerCase().includes(filter));
+    }
+    return result;
   }, [history, filter]);
+
+  const totalPages = Math.ceil(filteredHistory.length / ITEMS_PER_PAGE);
+  const paginatedHistory = filteredHistory.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Reset to page 1 when filter changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filter]);
 
   return (
     <motion.div
@@ -53,7 +70,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ history }) => {
       </div>
 
       <div className="space-y-4">
-        {filteredHistory.map((item) => {
+        {paginatedHistory.map((item) => {
           const isDanger = item.risk.toLowerCase().includes('critical') || item.risk.toLowerCase().includes('danger') || item.risk.toLowerCase().includes('unknown');
           const isHigh = item.risk.toLowerCase().includes('high');
           const isModerate = item.risk.toLowerCase().includes('moderate') || item.risk.toLowerCase().includes('medium');
@@ -112,6 +129,28 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ history }) => {
               <AlertTriangle size={24} className="text-minimal-muted" />
             </div>
             No historical health insights found.
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-4 pt-6">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+              className="p-2 border border-minimal-border rounded-xl text-minimal-muted hover:bg-minimal-bg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <div className="rotate-0"><ChevronLeft size={20} /></div>
+            </button>
+            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-minimal-muted">
+              Page {currentPage} / {totalPages}
+            </span>
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => p + 1)}
+              className="p-2 border border-minimal-border rounded-xl text-minimal-muted hover:bg-minimal-bg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronRight size={20} />
+            </button>
           </div>
         )}
       </div>

@@ -17,7 +17,8 @@ import {
   FamilyLink, 
   RiskEntry,
   AuthUser,
-  BMILog
+  BMILog,
+  GraphAIHistory
 } from '../types';
 
 export function useHealthData(user: AuthUser | null) {
@@ -30,6 +31,7 @@ export function useHealthData(user: AuthUser | null) {
   const [riskHistory, setRiskHistory] = useState<RiskEntry[]>([]);
   const [bmiLogs, setBmiLogs] = useState<BMILog[]>([]);
   const [chronicInsights, setChronicInsights] = useState<AIInsight[]>([]);
+  const [graphAIHistory, setGraphAIHistory] = useState<GraphAIHistory[]>([]);
 
   // Listen for Heart Rate Logs
   useEffect(() => {
@@ -163,6 +165,21 @@ export function useHealthData(user: AuthUser | null) {
     return () => unsubscribe();
   }, [user]);
 
+  // Listen for Graph AI History
+  useEffect(() => {
+    if (!user) return;
+    const q = query(
+      collection(db, 'users', user.uid, 'graph_ai_history'),
+      orderBy('createdAt', 'desc'),
+      limit(200)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const logs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as GraphAIHistory));
+      setGraphAIHistory(logs);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
   return {
     heartLogs,
     chronicLogs,
@@ -172,6 +189,7 @@ export function useHealthData(user: AuthUser | null) {
     familyLinks,
     riskHistory,
     bmiLogs,
-    chronicInsights
+    chronicInsights,
+    graphAIHistory
   };
 }

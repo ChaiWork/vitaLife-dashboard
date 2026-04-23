@@ -56,8 +56,8 @@ export function useDashboardData({
   }, [heartLogs, chronicLogs]);
 
   const dailyBreakdown = useMemo(() => {
-    const buckets: Record<number, { hr: number[], sys: number[], dia: number[], glu: number[] }> = {};
-    for (let i = 0; i < 24; i++) buckets[i] = { hr: [], sys: [], dia: [], glu: [] };
+    const buckets: Record<number, { hr: number[], sys: number[], dia: number[], glu: number[], bmi: number[] }> = {};
+    for (let i = 0; i < 24; i++) buckets[i] = { hr: [], sys: [], dia: [], glu: [], bmi: [] };
 
     breakdownLogs.forEach(b => {
       const h = b.hour;
@@ -85,6 +85,16 @@ export function useDashboardData({
       }
     });
 
+    bmiLogs.forEach(log => {
+      const logDate = log.createdAt?.toDate ? log.createdAt.toDate() : new Date(log.createdAt);
+      if (logDate >= startOfDay) {
+        const hour = logDate.getHours();
+        if (log.bmi) buckets[hour].bmi.push(log.bmi);
+      }
+    });
+
+    const latestBmiValue = bmiLogs[0]?.bmi || null;
+
     return Array.from({ length: 24 }, (_, hour) => {
       const b = buckets[hour];
       return { 
@@ -92,15 +102,17 @@ export function useDashboardData({
         heartRate: b.hr.length > 0 ? Math.round(b.hr.reduce((a, b) => a + b) / b.hr.length) : null,
         systolic: b.sys.length > 0 ? Math.round(b.sys.reduce((a, b) => a + b) / b.sys.length) : null,
         diastolic: b.dia.length > 0 ? Math.round(b.dia.reduce((a, b) => a + b) / b.dia.length) : null,
-        glucose: b.glu.length > 0 ? Math.round(b.glu.reduce((a, b) => a + b) / b.glu.length) : null
+        glucose: b.glu.length > 0 ? Math.round(b.glu.reduce((a, b) => a + b) / b.glu.length) : null,
+        bmi: b.bmi.length > 0 ? b.bmi[b.bmi.length - 1] : latestBmiValue
       };
     });
-  }, [heartLogs, chronicLogs, breakdownLogs]);
+  }, [heartLogs, chronicLogs, breakdownLogs, bmiLogs]);
 
   const periodicTrends = useMemo(() => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const weekDayShort = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    const latestBmiValue = bmiLogs[0]?.bmi || null;
 
     const getDailyAverages = (days: number) => {
       const breakdown: Record<string, { hr: number[], sys: number[], dia: number[], glu: number[], bmi: number[] }> = {};
@@ -110,7 +122,9 @@ export function useDashboardData({
         d.setDate(d.getDate() - (days - 1 - i));
         const key = d.toDateString();
         breakdown[key] = { hr: [], sys: [], dia: [], glu: [], bmi: [] };
-        let label = days === 7 ? weekDayShort[d.getDay()] : (i === 0 ? '-30d' : (i === 14 ? '-15d' : (i === days-1 ? 'Today' : '')));
+        let label = days === 7 
+          ? weekDayShort[d.getDay()] 
+          : (i === 0 ? '-30d' : (i === 10 ? '-20d' : (i === 20 ? '-10d' : (i === days - 1 ? 'Today' : ''))));
         results.push({ key, label });
       }
 
@@ -136,17 +150,22 @@ export function useDashboardData({
         if (breakdown[key] && log.bmi) breakdown[key].bmi.push(log.bmi);
       });
 
-      return results.map(r => {
+      let currentBmiCarrier = latestBmiValue;
+
+      return results.reverse().map(r => {
         const b = breakdown[r.key];
+        const dayBmi = b.bmi.length > 0 ? b.bmi[b.bmi.length - 1] : currentBmiCarrier;
+        if (b.bmi.length > 0) currentBmiCarrier = b.bmi[0]; // Naive back-filling for historicals
+        
         return { 
           ...r, 
           heartRate: b.hr.length > 0 ? Math.round(b.hr.reduce((a, b) => a + b) / b.hr.length) : null,
           systolic: b.sys.length > 0 ? Math.round(b.sys.reduce((a, b) => a + b) / b.sys.length) : null,
           diastolic: b.dia.length > 0 ? Math.round(b.dia.reduce((a, b) => a + b) / b.dia.length) : null,
           glucose: b.glu.length > 0 ? Math.round(b.glu.reduce((a, b) => a + b) / b.glu.length) : null,
-          bmi: b.bmi.length > 0 ? b.bmi[b.bmi.length - 1] : null
+          bmi: dayBmi
         };
-      });
+      }).reverse();
     };
     return { weekly: getDailyAverages(7), monthly: getDailyAverages(30) };
   }, [heartLogs, chronicLogs, bmiLogs]);

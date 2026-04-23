@@ -30,10 +30,11 @@ export function useDashboardController(user: AuthUser, profile: UserProfile | nu
     familyLinks,
     riskHistory,
     bmiLogs,
-    chronicInsights
+    chronicInsights,
+    graphAIHistory
   } = healthData;
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'profile' | 'caregiver' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'profile' | 'caregiver' | 'settings' | 'aiHistory'>('dashboard');
   const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [chartView, setChartView] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [activeMetric, setActiveMetric] = useState<'heartRate' | 'bloodPressure' | 'bloodGlucose' | 'bmi'>('heartRate');
@@ -307,6 +308,13 @@ export function useDashboardController(user: AuthUser, profile: UserProfile | nu
     } catch (e) { console.error(e); }
   };
 
+  const deleteGraphAIHistory = async (id: string) => {
+    if (!user) return;
+    try {
+      await deleteDoc(doc(db, 'users', user.uid, 'graph_ai_history', id));
+    } catch (e) { console.error(e); }
+  };
+
   return {
     // Selection state
     activeTab, setActiveTab,
@@ -332,7 +340,7 @@ export function useDashboardController(user: AuthUser, profile: UserProfile | nu
     
     // Derived/Fetched Data
     todayStats, dailyBreakdown, periodicTrends, unifiedHistory,
-    heartLogs, chronicLogs, bmiLogs, aiInsights, chronicles: chronicInsights, 
+    heartLogs, chronicLogs, bmiLogs, aiInsights, chronicles: chronicInsights, graphAIHistory,
     notifications, familyLinks, riskHistory,
     
     // Actions
@@ -342,6 +350,7 @@ export function useDashboardController(user: AuthUser, profile: UserProfile | nu
     updateProfile,
     addFamilyMember,
     clearAllNotifications,
+    deleteGraphAIHistory,
     lastAlertedId
   };
 }

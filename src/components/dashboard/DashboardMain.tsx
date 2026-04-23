@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sidebar } from '../layout/Sidebar';
 import { DashboardHeader } from '../layout/DashboardHeader';
-import { LayoutDashboard, Users, History, HeartHandshake, Settings as SettingsIcon } from 'lucide-react';
+import { LayoutDashboard, Users, History, HeartHandshake, Settings as SettingsIcon, Brain } from 'lucide-react';
 import { NotificationPanel } from '../layout/NotificationPanel';
 import { StatGrid } from './StatGrid';
 import { AIRiskHighlight } from './AIRiskHighlight';
@@ -10,6 +10,7 @@ import { HealthCharts } from './HealthCharts';
 import { ChronicAIAnalysis } from './ChronicAIAnalysis';
 import { GraphAIIntelligence } from './GraphAIIntelligence';
 import { HistoryTab } from '../tabs/HistoryTab';
+import { AIHistoryTab } from '../tabs/AIHistoryTab';
 import { ProfileTab } from '../tabs/ProfileTab';
 import { CaregiverView } from '../tabs/CaregiverView';
 import { SettingsTab } from '../tabs/SettingsTab';
@@ -59,14 +60,15 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ user, profile }) =
     heartAnalysis, chronicAnalysis,
     lastAnalysisTime,
     todayStats, dailyBreakdown, periodicTrends, unifiedHistory,
-    heartLogs, chronicLogs, bmiLogs, aiInsights, chronicles,
+    heartLogs, chronicLogs, bmiLogs, aiInsights, chronicles, graphAIHistory,
     notifications, familyLinks, riskHistory,
     generateChronicAnalysis,
     saveManualVitals,
     simulateHeartRate,
     updateProfile,
     addFamilyMember,
-    clearAllNotifications
+    clearAllNotifications,
+    deleteGraphAIHistory
   } = controller;
 
   const findNearestClinic = () => {
@@ -99,6 +101,7 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ user, profile }) =
         {profile?.role === 'caregiver' && <MobileNavButton active={activeTab === 'caregiver'} onClick={() => setActiveTab('caregiver')} icon={<HeartHandshake size={20} />} />}
         <MobileNavButton active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} icon={<Users size={20} />} />
         <MobileNavButton active={activeTab === 'history'} onClick={() => setActiveTab('history')} icon={<History size={20} />} />
+        <MobileNavButton active={activeTab === 'aiHistory'} onClick={() => setActiveTab('aiHistory')} icon={<Brain size={20} />} />
         <MobileNavButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<SettingsIcon size={20} />} />
       </nav>
 
@@ -154,8 +157,9 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ user, profile }) =
                   setActiveMetric={setActiveMetric}
                 />
                 <GraphAIIntelligence 
+                  user={user}
                   view={chartView}
-                  data={chartView === 'daily' ? dailyBreakdown : (chartView === 'weekly' ? periodicTrends.weekly : periodicTrends.monthly)}
+                  data={activeMetric === 'bmi' ? bmiLogs : (chartView === 'daily' ? dailyBreakdown : (chartView === 'weekly' ? periodicTrends.weekly : periodicTrends.monthly))}
                   metric={activeMetric === 'heartRate' ? 'Heart Rate' : activeMetric === 'bloodPressure' ? 'Blood Pressure' : activeMetric === 'bloodGlucose' ? 'Blood Glucose' : 'BMI'}
                   bmiData={bmiLogs}
                 />
@@ -169,11 +173,19 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ user, profile }) =
               />
             )}
 
+            {activeTab === 'aiHistory' && (
+              <AIHistoryTab 
+                history={graphAIHistory} 
+                onDelete={deleteGraphAIHistory}
+              />
+            )}
+
             {activeTab === 'history' && <HistoryTab history={unifiedHistory} />}
 
             {activeTab === 'profile' && (
               <ProfileTab 
                 profile={profile} 
+                userId={user.uid}
                 familyLinks={familyLinks}
                 isAddingMember={isAddingMember}
                 setIsAddingMember={setIsAddingMember}

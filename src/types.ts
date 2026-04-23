@@ -85,4 +85,16 @@ export interface BMILog {
   createdAt: any;
 }
 
+export interface GraphAIHistory {
+  id: string;
+  metric: string;
+  view: string;
+  summary: string;
+  stability: number;
+  prediction: string;
+  advice: string;
+  trends: { label: string; change: number; trend: string }[];
+  createdAt: any;
+}
+
 export type AuthUser = User;

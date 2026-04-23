@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Activity, Plus, Trash2, Edit2, Save, X } from 'lucide-react';
+import { Activity, Plus, Trash2, Edit2, Save, X, Database } from 'lucide-react';
 import { UserProfile, FamilyLink } from '../../types';
+import { seed30DaysData } from '../../lib/mockSeeder';
 
 interface ProfileTabProps {
   profile: UserProfile | null;
+  userId?: string;
   familyLinks: FamilyLink[];
   isAddingMember: boolean;
   setIsAddingMember: (val: boolean) => void;
@@ -19,6 +21,7 @@ interface ProfileTabProps {
 
 export const ProfileTab: React.FC<ProfileTabProps> = ({
   profile,
+  userId,
   familyLinks,
   isAddingMember,
   setIsAddingMember,
@@ -31,7 +34,21 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
   onUpdateProfile
 }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
   const [formData, setFormData] = useState<Partial<UserProfile>>({});
+
+  const handleSeed = async () => {
+    if (!userId || isSeeding) return;
+    try {
+      setIsSeeding(true);
+      await seed30DaysData(userId);
+      setFamilyLinkStatus({ type: 'success', message: "30-day mock history synced successfully!" });
+    } catch (e) {
+      setFamilyLinkStatus({ type: 'error', message: "Failed to generate mock data." });
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   useEffect(() => {
     if (profile) {
@@ -198,16 +215,25 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
         </div>
         
         <div className="glass-panel p-8 rounded-3xl space-y-6">
-          <h3 className="font-semibold text-lg">VitaLife Assistant</h3>
-          <div className="p-4 bg-minimal-bg border border-minimal-border rounded-2xl flex items-start gap-3">
-            <div className="p-2 bg-minimal-blue/10 rounded-lg text-minimal-blue">
-              <Activity size={20} />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-minimal-ink mb-1">App Integration Active</p>
-              <p className="text-[11px] text-minimal-muted leading-relaxed">
-                Your biometric data and emergency alerts are synced in real-time with the VitaLife Assistant mobile app. Push notifications will be delivered to your phone during critical health events.
-              </p>
+          <h3 className="font-semibold text-lg">System Utilities</h3>
+          <div className="space-y-4">
+            <div className="p-4 bg-minimal-bg border border-minimal-border rounded-2xl flex items-start gap-3">
+              <div className="p-2 bg-minimal-ink/5 rounded-lg text-minimal-muted">
+                <Database size={20} />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-bold text-minimal-ink mb-1">Developer Seeding</p>
+                <p className="text-[11px] text-minimal-muted leading-relaxed mb-3">
+                  Generate 30 days of retrospective mock health data (Heart Rate, Vitals, BMI) for Chairis Pum to test longitudinal graph intelligence.
+                </p>
+                <button 
+                  onClick={handleSeed}
+                  disabled={isSeeding}
+                  className="px-4 py-2 bg-minimal-white border border-minimal-border rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-minimal-bg transition-all disabled:opacity-50"
+                >
+                  {isSeeding ? 'Generative Flow Active...' : 'Seed 30-Day History'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

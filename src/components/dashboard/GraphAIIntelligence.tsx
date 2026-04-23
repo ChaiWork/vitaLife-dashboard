@@ -2,15 +2,18 @@ import React, { useState } from 'react';
 import { Brain, Sparkles, TrendingUp, TrendingDown, Minus, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { generateGraphAnalysis, GraphAnalysisResponse } from '../../services/geminiService';
+import { db, collection, addDoc, serverTimestamp } from '../../lib/firebase';
+import { AuthUser } from '../../types';
 
 interface GraphAIIntelligenceProps {
+  user: AuthUser;
   view: 'daily' | 'weekly' | 'monthly';
   data: any[];
   metric: string;
   bmiData?: any[];
 }
 
-export const GraphAIIntelligence: React.FC<GraphAIIntelligenceProps> = ({ view, data, metric, bmiData }) => {
+export const GraphAIIntelligence: React.FC<GraphAIIntelligenceProps> = ({ user, view, data, metric, bmiData }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiResponse, setAiResponse] = useState<GraphAnalysisResponse | null>(null);
 
@@ -19,6 +22,20 @@ export const GraphAIIntelligence: React.FC<GraphAIIntelligenceProps> = ({ view, 
     try {
       const response = await generateGraphAnalysis({ view, data, metric, bmiData });
       setAiResponse(response);
+
+      // Save to history automatically
+      if (user) {
+        await addDoc(collection(db, 'users', user.uid, 'graph_ai_history'), {
+          metric,
+          view,
+          summary: response.summary,
+          stability: response.stability,
+          prediction: response.prediction,
+          advice: response.advice,
+          trends: response.trends,
+          createdAt: serverTimestamp()
+        });
+      }
     } catch (error) {
       console.error('Graph analysis failed:', error);
     } finally {
@@ -112,6 +129,27 @@ export const GraphAIIntelligence: React.FC<GraphAIIntelligenceProps> = ({ view, 
                   </div>
                 </div>
                 
+                <div className="pt-4 border-t border-minimal-border flex flex-col md:flex-row gap-6">
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2 text-minimal-blue">
+                      <TrendingUp size={14} className="animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">A.I. Prediction</span>
+                    </div>
+                    <p className="text-sm font-bold text-minimal-ink leading-relaxed">
+                      {aiResponse.prediction}
+                    </p>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                      <Sparkles size={14} />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Precision Advice</span>
+                    </div>
+                    <p className="text-xs font-medium text-minimal-muted leading-relaxed">
+                      {aiResponse.advice}
+                    </p>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <div className="flex items-center justify-between px-1">
                     <span className="text-[10px] font-black text-minimal-muted/40 uppercase tracking-widest">Intelligence Confidence Matrix</span>
