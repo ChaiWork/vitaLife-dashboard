@@ -10,6 +10,7 @@ interface ManualVitalsModalProps {
     diastolic: string;
     glucose: string;
     spo2: string;
+    heartRate: string;
   };
   setVitals: (vitals: any) => void;
   onSave: () => void;
@@ -40,6 +41,16 @@ export const ManualVitalsModal: React.FC<ManualVitalsModalProps> = ({
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-minimal-muted ml-1">Heart Rate (BPM)</label>
+                <input 
+                   type="number"
+                   placeholder="e.g. 72"
+                   value={vitals.heartRate}
+                   onChange={(e) => setVitals({...vitals, heartRate: e.target.value})}
+                   className="w-full p-4 bg-minimal-bg border border-minimal-border rounded-2xl text-sm outline-none focus:ring-2 focus:ring-minimal-blue/20 transition-all font-medium"
+                />
+              </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-minimal-muted ml-1">Blood Glucose (mg/dL)</label>
                 <input 
@@ -84,7 +95,7 @@ export const ManualVitalsModal: React.FC<ManualVitalsModalProps> = ({
 
             <button 
               onClick={onSave}
-              disabled={!vitals.glucose && !vitals.systolic && !vitals.spo2}
+              disabled={!vitals.glucose && !vitals.systolic && !vitals.spo2 && !vitals.heartRate}
               className="w-full py-4 bg-minimal-ink text-white rounded-2xl font-bold text-sm hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed shadow-xl shadow-minimal-ink/20"
             >
               Save Vitals to Vault

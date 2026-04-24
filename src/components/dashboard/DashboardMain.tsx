@@ -122,7 +122,6 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ user, profile }) =
             onToggleNotifications={() => setIsNotificationOpen(true)}
             onRunAI={generateChronicAnalysis}
             onRefresh={refreshData}
-            onManualLog={() => setIsManualEntryOpen(true)}
             onSimulateLog={simulateHeartRate}
             onSOS={triggerSOS}
           />
@@ -235,6 +234,11 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ user, profile }) =
           setShowNoDataPopup(false);
           controller.setAnalysisMessage(null);
         }} 
+        onManualEntry={() => {
+          setShowNoDataPopup(false);
+          controller.setAnalysisMessage(null);
+          setIsManualEntryOpen(true);
+        }}
         title={controller.analysisMessage ? "Outdated Health Data" : undefined}
         message={controller.analysisMessage || undefined}
       />

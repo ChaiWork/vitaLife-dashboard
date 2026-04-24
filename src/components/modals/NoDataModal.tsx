@@ -5,11 +5,12 @@ import { AlertTriangle } from 'lucide-react';
 interface NoDataModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onManualEntry?: () => void;
   title?: string;
   message?: string;
 }
 
-export const NoDataModal: React.FC<NoDataModalProps> = ({ isOpen, onClose, title, message }) => {
+export const NoDataModal: React.FC<NoDataModalProps> = ({ isOpen, onClose, onManualEntry, title, message }) => {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -52,6 +53,14 @@ export const NoDataModal: React.FC<NoDataModalProps> = ({ isOpen, onClose, title
               >
                 Connect Google Fit
               </button>
+              {onManualEntry && (
+                <button 
+                  onClick={onManualEntry}
+                  className="w-full py-4 bg-white border-2 border-minimal-ink text-minimal-ink rounded-2xl font-bold text-sm hover:bg-minimal-bg transition-all active:scale-[0.98]"
+                >
+                  Enter Vitals Manually
+                </button>
+              )}
             </div>
           </motion.div>
         </div>

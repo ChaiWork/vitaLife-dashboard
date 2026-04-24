@@ -212,8 +212,8 @@ export function useDashboardData({
         };
       });
 
-    return [...historicalEntries, ...aiEntries, ...metabolicEntries].sort((a, b) => b.sortDate - a.sortDate);
-  }, [riskHistory, aiInsights, chronicInsights]);
+    return [...historicalEntries, ...aiEntries].sort((a, b) => b.sortDate - a.sortDate);
+  }, [riskHistory, aiInsights]);
 
   return {
     todayStats,

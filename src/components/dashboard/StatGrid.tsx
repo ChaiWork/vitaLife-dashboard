@@ -25,9 +25,10 @@ export const StatGrid: React.FC<StatGridProps> = ({ todayStats, profile }) => {
 
   const getBMIStatus = (val: number | null) => {
     if (val === null) return undefined;
-    if (val < 18.5) return { level: 'Underweight', color: 'text-minimal-orange', label: 'Underweight' };
-    if (val < 25) return { level: 'Normal', color: 'text-emerald-500', label: 'Healthy' };
-    return { level: 'Overweight', color: 'text-minimal-orange', label: 'Overweight' };
+    if (val < 18.5) return { level: 'Underweight', color: 'text-amber-500', label: 'Underweight', emoji: '⚠️' };
+    if (val < 25) return { level: 'Normal', color: 'text-emerald-500', label: 'Healthy', emoji: '✅' };
+    if (val < 30) return { level: 'Overweight', color: 'text-amber-500', label: 'Overweight', emoji: '⚠️' };
+    return { level: 'Obese', color: 'text-red-500', label: 'High Risk', emoji: '🚨' };
   };
 
   return (

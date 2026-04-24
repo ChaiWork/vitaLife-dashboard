@@ -15,7 +15,6 @@ interface DashboardHeaderProps {
   onToggleNotifications: () => void;
   onRunAI: () => void;
   onRefresh: () => void;
-  onManualLog: () => void;
   onSimulateLog: () => void;
   onSOS: () => void;
 }
@@ -33,7 +32,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onToggleNotifications,
   onRunAI,
   onRefresh,
-  onManualLog,
   onSimulateLog,
   onSOS
 }) => {
@@ -120,12 +118,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           title="Refresh Heart Intelligence"
         >
           <RefreshCw size={18} />
-        </button>
-        <button 
-          onClick={onManualLog}
-          className="hidden sm:flex items-center gap-2 px-4 py-2 border border-minimal-border rounded-xl text-xs font-medium text-minimal-muted hover:bg-minimal-bg transition-all mr-2"
-        >
-          <Plus size={14} /> Manual Log
         </button>
         <button 
           onClick={onSimulateLog}

@@ -54,7 +54,7 @@ export function useDashboardController(user: AuthUser, profile: UserProfile | nu
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [isClearingAll, setIsClearingAll] = useState(false);
   const [isManualEntryOpen, setIsManualEntryOpen] = useState(false);
-  const [manualVitals, setManualVitals] = useState({ systolic: '', diastolic: '', glucose: '', spo2: '' });
+  const [manualVitals, setManualVitals] = useState({ systolic: '', diastolic: '', glucose: '', spo2: '', heartRate: '' });
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const [familyLinkStatus, setFamilyLinkStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   const [isChronicAnalyzing, setIsChronicAnalyzing] = useState(false);
@@ -320,18 +320,44 @@ export function useDashboardController(user: AuthUser, profile: UserProfile | nu
     if (!user) return;
     try {
       setIsSyncing(true);
-      const logRef = doc(collection(db, 'users', user.uid, 'chronicVital_log'));
-      await setDoc(logRef, {
+      
+      const batch = writeBatch(db);
+      
+      // 1. Save Chronic Vitals (BP, Glucose, SpO2)
+      const chronicRef = doc(collection(db, 'users', user.uid, 'chronicVital_log'));
+      batch.set(chronicRef, {
         systolic: manualVitals.systolic ? Number(manualVitals.systolic) : 120,
         diastolic: manualVitals.diastolic ? Number(manualVitals.diastolic) : 80,
         glucose: manualVitals.glucose ? Number(manualVitals.glucose) : 95,
         spo2: manualVitals.spo2 ? Number(manualVitals.spo2) : 98,
         createdAt: serverTimestamp()
       });
+
+      // 2. Save Heart Rate if provided
+      if (manualVitals.heartRate) {
+        const hrRef = doc(collection(db, 'users', user.uid, 'heart_rate_logs'));
+        batch.set(hrRef, {
+          heartRate: Number(manualVitals.heartRate),
+          steps: todayStats.steps || 0,
+          createdAt: serverTimestamp(),
+          source: 'manual'
+        });
+      }
+
+      await batch.commit();
+      
       setIsManualEntryOpen(false);
-      setManualVitals({ systolic: '', diastolic: '', glucose: '', spo2: '' });
-      await generateChronicAnalysis();
-    } catch (e) { console.error('Manual entry failed:', e); }
+      setManualVitals({ systolic: '', diastolic: '', glucose: '', spo2: '', heartRate: '' });
+      
+      // Trigger analyses immediately
+      await Promise.all([
+        generateHeartAnalysis(),
+        generateChronicAnalysis()
+      ]);
+    } catch (e) { 
+      console.error('Manual entry failed:', e);
+      handleFirestoreError(e, OperationType.CREATE, `users/${user.uid}/vitals_save`);
+    }
     finally { setIsSyncing(false); }
   };
 
@@ -441,30 +467,28 @@ export function useDashboardController(user: AuthUser, profile: UserProfile | nu
     const hr = latestLog.heartRate;
     if (!hr || hr === 0) return;
 
-    // Trigger on abnormal HR (High: >120, Low: <50)
-    if (hr > 120 || hr < 50) {
-      const timer = setTimeout(() => {
-        const now = Date.now();
-        const tenMinutes = 10 * 60 * 1000;
-        const logTime = latestLog.createdAt?.toDate ? latestLog.createdAt.toDate().getTime() : 0;
-        
-        // Cooldown check (60 seconds for same anomaly value, 15 seconds for any auto-trigger)
-        const timeSinceLast = now - lastAutoAnalysisTime.current;
-        const isDuplicateValue = Math.abs(lastAnalyzedHR.current - hr) < 5 && timeSinceLast < 60000;
-        const isOutdated = (now - logTime) > tenMinutes;
-        
-        // Final check: ensure we aren't analyzing and it's still abnormal and within 10min window
-        if (!isAnalyzing && !analysisInProgress.current && timeSinceLast > 15000 && !isDuplicateValue && !isOutdated) {
-          console.log(`Auto-triggering AI analysis for abnormal HR: ${hr}`);
-          generateHeartAnalysis({ 
-            heartRate: hr, 
-            timestamp: latestLog.createdAt, 
-            logId: latestLog.id 
-          });
-        }
-      }, 2000); 
-      return () => clearTimeout(timer);
-    }
+    // Trigger analysis for new logs (Manual or Syced from Phone)
+    const timer = setTimeout(() => {
+      const now = Date.now();
+      const tenMinutes = 10 * 60 * 1000;
+      const logTime = latestLog.createdAt?.toDate ? latestLog.createdAt.toDate().getTime() : now;
+      
+      // Cooldown check (15 seconds for any auto-trigger to prevent loops)
+      const timeSinceLast = now - lastAutoAnalysisTime.current;
+      const isDuplicateValue = Math.abs(lastAnalyzedHR.current - hr) < 2 && timeSinceLast < 60000;
+      const isOutdated = (now - logTime) > tenMinutes;
+      
+      // Final check: ensure we aren't analyzing and it's within 10min window
+      if (!isAnalyzing && !analysisInProgress.current && timeSinceLast > 15000 && !isDuplicateValue && !isOutdated) {
+        console.log(`Auto-triggering Heart Intelligence for new/synced HR: ${hr}`);
+        generateHeartAnalysis({ 
+          heartRate: hr, 
+          timestamp: latestLog.createdAt, 
+          logId: latestLog.id 
+        });
+      }
+    }, 3000); // 3s delay to allow batching/settling
+    return () => clearTimeout(timer);
   }, [heartLogs, isAnalyzing, user?.uid]);
 
   return {
