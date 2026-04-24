@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ChevronRight, Activity, Heart, Zap, Trash2, Droplets } from 'lucide-react';
 
 interface HistoryItem {
   id: string;
@@ -14,11 +14,12 @@ interface HistoryItem {
 
 interface HistoryTabProps {
   history: HistoryItem[];
+  onDelete: (id: string, source: string) => void;
 }
 
 const ITEMS_PER_PAGE = 5;
 
-export const HistoryTab: React.FC<HistoryTabProps> = ({ history }) => {
+export const HistoryTab: React.FC<HistoryTabProps> = ({ history, onDelete }) => {
   const [filter, setFilter] = React.useState<'all' | 'low' | 'moderate' | 'high' | 'critical'>('all');
   const [currentPage, setCurrentPage] = React.useState(1);
 
@@ -35,6 +36,15 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ history }) => {
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  const getSourceIcon = (source: string) => {
+    switch (source) {
+      case 'Heart AI': return <Heart size={16} className="text-rose-500" />;
+      case 'Metabolic Insight': return <Droplets size={16} className="text-minimal-blue" />;
+      case 'Chronic Analysis': return <Zap size={16} className="text-amber-500" />;
+      default: return <Activity size={16} className="text-minimal-muted" />;
+    }
+  };
 
   // Reset to page 1 when filter changes
   React.useEffect(() => {
@@ -76,47 +86,63 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ history }) => {
           const isModerate = item.risk.toLowerCase().includes('moderate') || item.risk.toLowerCase().includes('medium');
           
           return (
-            <div key={item.id} className={`p-6 rounded-3xl flex flex-col md:flex-row gap-6 items-start border shadow-sm transition-colors ${
-              isDanger ? 'bg-rose-50 border-rose-200' :
-              isHigh ? 'bg-red-50 border-red-200' :
-              isModerate ? 'bg-amber-50 border-amber-200' :
-              'bg-emerald-50 border-emerald-200'
+            <div key={item.id} className={`p-6 rounded-[32px] flex flex-col md:flex-row gap-6 items-start border shadow-sm transition-all group relative overflow-hidden ${
+              isDanger ? 'bg-rose-50/50 border-rose-100 hover:bg-rose-50' :
+              isHigh ? 'bg-red-50/50 border-red-100 hover:bg-red-50' :
+              isModerate ? 'bg-amber-50/50 border-amber-100 hover:bg-amber-50' :
+              'bg-emerald-50/50 border-emerald-100 hover:bg-emerald-50'
             }`}>
               <div className="md:w-40 shrink-0">
-                <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${
-                  isDanger ? 'text-rose-700/60' : isHigh ? 'text-red-700/60' : isModerate ? 'text-amber-700/60' : 'text-emerald-700/60'
-                }`}>{item.source}</p>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`p-1.5 rounded-lg ${
+                    isDanger ? 'bg-rose-100 text-rose-600' : 
+                    isHigh ? 'bg-red-100 text-red-600' : 
+                    isModerate ? 'bg-amber-100 text-amber-600' : 
+                    'bg-emerald-100 text-emerald-600'
+                  }`}>
+                    {getSourceIcon(item.source)}
+                  </div>
+                  <p className={`text-[10px] font-black uppercase tracking-widest ${
+                    isDanger ? 'text-rose-700/60' : isHigh ? 'text-red-700/60' : isModerate ? 'text-amber-700/60' : 'text-emerald-700/60'
+                  }`}>{item.source}</p>
+                </div>
                 <p className="text-sm font-semibold text-minimal-ink">
-                  {item.date.includes('T') && item.date.includes('Z') ? 
-                    new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) + ' ' + new Date(item.date).toLocaleDateString() : 
-                    item.date}
+                  {item.date}
                 </p>
-                <span className={`text-[10px] font-bold uppercase tracking-widest inline-block px-2 py-0.5 rounded mt-2 ${
-                  isDanger ? 'bg-rose-600 text-white shadow-sm' :
-                  isHigh ? 'bg-red-600/10 text-red-700 border border-red-200/50' :
-                  isModerate ? 'bg-amber-600/10 text-amber-700 border border-amber-200/50' : 
-                  'bg-emerald-600/10 text-emerald-700 border border-emerald-200/50'
+                <span className={`text-[10px] font-black uppercase tracking-widest inline-block px-2 py-0.5 rounded-lg mt-2 border ${
+                  isDanger ? 'bg-rose-600 text-white border-rose-600 shadow-sm' :
+                  isHigh ? 'bg-red-500/10 text-red-700 border-red-200' :
+                  isModerate ? 'bg-amber-500/10 text-amber-700 border-amber-200' : 
+                  'bg-emerald-500/10 text-emerald-700 border-emerald-200'
                 }`}>
                   {isDanger ? 'Danger' : 
                   item.risk.toLowerCase().includes('unknown') ? 'Unknown Risk' : 
                   item.risk} {(!item.risk.toLowerCase().includes('risk') && !item.risk.toLowerCase().includes('unknown')) && 'Risk'}
                 </span>
               </div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-semibold text-minimal-ink">{item.summary}</h4>
-                  {item.heartRate && (
-                    <span className={`text-xs font-bold px-2 py-1 rounded-lg border ${
-                      isDanger ? 'bg-rose-100 border-rose-300 text-rose-800' :
-                      isHigh ? 'bg-red-100 border-red-300 text-red-800' :
-                      isModerate ? 'bg-amber-100 border-amber-300 text-amber-800' :
-                      'bg-emerald-100 border-emerald-300 text-emerald-800'
-                    }`}>
-                      {item.heartRate} BPM
-                    </span>
-                  )}
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-start mb-2 gap-4">
+                  <h4 className="font-bold text-minimal-ink leading-snug">{item.summary}</h4>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {item.heartRate && (
+                      <span className={`text-[10px] font-black px-2 py-1 rounded-lg border uppercase tracking-widest ${
+                        isDanger ? 'bg-rose-100 border-rose-200 text-rose-800' :
+                        isHigh ? 'bg-red-100 border-red-200 text-red-800' :
+                        isModerate ? 'bg-amber-100 border-amber-200 text-amber-800' :
+                        'bg-emerald-100 border-emerald-200 text-emerald-800'
+                      }`}>
+                        {item.heartRate} BPM
+                      </span>
+                    )}
+                    <button 
+                      onClick={() => onDelete(item.id, item.source)}
+                      className="p-2 text-minimal-muted hover:text-rose-500 hover:bg-rose-100/50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
-                <p className={`text-sm leading-relaxed ${
+                <p className={`text-sm font-medium leading-relaxed ${
                   isDanger ? 'text-rose-950/70' : isHigh ? 'text-red-950/70' : isModerate ? 'text-amber-950/70' : 'text-emerald-950/70'
                 }`}>{item.advice}</p>
               </div>

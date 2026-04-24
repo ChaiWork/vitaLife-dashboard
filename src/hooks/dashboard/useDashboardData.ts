@@ -8,6 +8,7 @@ interface DashboardData {
   bmiLogs: BMILog[];
   riskHistory: RiskEntry[];
   aiInsights: AIInsight[];
+  chronicInsights: AIInsight[];
 }
 
 export function useDashboardData({
@@ -16,7 +17,8 @@ export function useDashboardData({
   breakdownLogs,
   bmiLogs,
   riskHistory,
-  aiInsights
+  aiInsights,
+  chronicInsights
 }: DashboardData) {
   
   const todayStats = useMemo(() => {
@@ -174,7 +176,7 @@ export function useDashboardData({
     const historicalEntries = riskHistory.map(entry => ({
       id: entry.id,
       date: entry.date,
-      sortDate: new Date(entry.date).getTime(),
+      sortDate: entry.time?.toDate ? entry.time.toDate().getTime() : (entry.date ? new Date(entry.date).getTime() : 0),
       risk: entry.riskLevel,
       summary: entry.summary,
       advice: entry.advice,
@@ -192,12 +194,26 @@ export function useDashboardData({
         summary: insight.summary,
         advice: insight.advice,
         heartRate: insight.heartRate,
-        source: insight.heartRate ? 'Heart AI' : 'Chronic AI'
+        source: 'Heart AI'
       };
     });
 
-    return [...historicalEntries, ...aiEntries].sort((a, b) => b.sortDate - a.sortDate);
-  }, [riskHistory, aiInsights]);
+    const metabolicEntries = chronicInsights.map(insight => {
+        const insightDate = insight.createdAt?.toDate ? insight.createdAt.toDate() : new Date(insight.createdAt);
+        return {
+          id: insight.id,
+          date: insightDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) + ' ' + insightDate.toLocaleDateString(),
+          sortDate: insightDate.getTime(),
+          risk: insight.risk,
+          summary: insight.summary,
+          advice: insight.advice,
+          heartRate: null,
+          source: 'Metabolic Insight'
+        };
+      });
+
+    return [...historicalEntries, ...aiEntries, ...metabolicEntries].sort((a, b) => b.sortDate - a.sortDate);
+  }, [riskHistory, aiInsights, chronicInsights]);
 
   return {
     todayStats,

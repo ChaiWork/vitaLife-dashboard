@@ -17,6 +17,7 @@ interface DashboardHeaderProps {
   onRefresh: () => void;
   onManualLog: () => void;
   onSimulateLog: () => void;
+  onSOS: () => void;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -33,7 +34,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onRunAI,
   onRefresh,
   onManualLog,
-  onSimulateLog
+  onSimulateLog,
+  onSOS
 }) => {
   const unreadCount = notifications.filter(n => !n.read).length;
   const role = profile?.role || 'patient';
@@ -61,7 +63,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <div className="p-2 bg-vital-400/10 text-vital-400 rounded-xl">
              <Activity size={24} />
           </div>
-          <h1 className="text-4xl font-display font-bold tracking-tight text-minimal-ink">VitaLife Assistant</h1>
+          <h1 className="text-4xl font-display font-bold tracking-tight text-minimal-ink">VitaLifeAssistant</h1>
         </div>
         <p className="text-xs font-bold text-minimal-muted/60 uppercase tracking-[0.2em] mb-3">AI-Powered Health Analytics & Companion</p>
         <div className="flex flex-col gap-1.5">
@@ -87,7 +89,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       <div className="flex items-center gap-3 flex-wrap justify-end">
         {/* Emergency SOS Button */}
         <button 
-          onClick={() => window.confirm('Trigger SOS Alert? This will notify your caregiver and local emergency services.')}
+          onClick={() => {
+            console.log('EMERGENCY SOS button clicked manually');
+            onSOS();
+          }}
           className="flex items-center gap-2 px-5 py-2.5 bg-rose-600 text-white rounded-2xl font-bold text-xs shadow-lg shadow-rose-600/30 hover:shadow-rose-600/50 transition-all hover:scale-105 active:scale-95 group"
         >
           <div className="w-2 h-2 bg-white rounded-full animate-ping" />
@@ -112,7 +117,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         <button 
           onClick={onRefresh}
           className="p-2.5 glass-panel !bg-transparent !border-minimal-border rounded-xl text-minimal-muted hover:!bg-minimal-bg transition-all neumorph-btn"
-          title="Refresh Data"
+          title="Refresh Heart Intelligence"
         >
           <RefreshCw size={18} />
         </button>

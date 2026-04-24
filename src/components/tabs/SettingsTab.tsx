@@ -20,7 +20,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ fontSize, setFontSize 
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-minimal-ink mb-2">Settings & Accessibility</h2>
           <p className="text-minimal-muted max-w-lg">
-            Customize your VitaLife Assistant experience to suit your needs.
+            Customize your VitaLifeAssistant experience to suit your needs.
           </p>
         </div>
       </div>

@@ -1,10 +1,10 @@
 {
-  "projectId": "vitalife-4eb12",
-  "appId": "1:1026604075454:web:2a0397520b5b4d554c51ef",
-  "apiKey": "AIzaSyAEBI8l_AlrMSxeL8OoYDyq3xqAT5oIFUU",
-  "authDomain": "vitalife-4eb12.firebaseapp.com",
+  "projectId": "vitalifebackend",
+  "appId": "1:569459730762:web:189e0dc4ba8622b56e39b3",
+  "apiKey": "AIzaSyC2XTRY7WDauNd6NwboIlKXd5-uwF635vo",
+  "authDomain": "vitalifebackend.firebaseapp.com",
   "firestoreDatabaseId": "(default)",
-  "storageBucket": "vitalife-4eb12.firebasestorage.app",
-  "messagingSenderId": "1026604075454",
+  "storageBucket": "vitalifebackend.firebasestorage.app",
+  "messagingSenderId": "569459730762",
   "measurementId": ""
 }

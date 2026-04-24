@@ -1,6 +1,18 @@
 import { httpsCallable } from "firebase/functions";
-import { functions } from "../lib/firebase";
+import { functions, auth } from "../lib/firebase";
 import { UserProfile } from "../types";
+
+/**
+ * Helper to get the current Firebase ID token for authenticated requests
+ */
+async function getAuthHeaders() {
+  const user = auth.currentUser;
+  if (!user) return {};
+  const token = await user.getIdToken();
+  return {
+    'Authorization': `Bearer ${token}`
+  };
+}
 
 export interface AIAnalysisRequest {
   heartRate: number | null;
@@ -36,34 +48,91 @@ export interface GraphAnalysisResponse {
 }
 
 /**
- * Calls the 'graphAnalysis' Firebase Callable Function to perform AI-driven longitudinal analysis.
+ * Calls the 'graphAnalysis' Cloud Run endpoint to perform AI-driven longitudinal analysis.
  */
 export async function generateGraphAnalysis(request: GraphAnalysisRequest): Promise<GraphAnalysisResponse> {
-  const fn = httpsCallable(functions, "graphAnalysis");
-  const result = await fn(request);
-  return result.data as GraphAnalysisResponse;
+  const url = import.meta.env.VITE_GRAPH_ANALYSIS_URL || 'https://graphanalysis-pfndekuqha-as.a.run.app';
+  
+  const authHeaders = await getAuthHeaders();
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      ...authHeaders
+    },
+    body: JSON.stringify({ data: request })
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text().catch(() => 'No error body');
+    throw new Error(`Graph analysis failed: ${response.status} ${response.statusText} - ${errorBody}`);
+  }
+
+  const data = await response.json();
+  // Firebase Callables return { result: ... } in modern versions or { data: ... } in older/custom ones
+  return (data.result || data.data || data) as GraphAnalysisResponse;
 }
 
 /**
- * Calls the 'chronicAnalysis' Firebase Callable Function to perform AI-driven health assessment.
- * This migration ensures secure backend processing instead of direct client-side LLM calls.
+ * Calls the health/chronic analysis Cloud Run endpoint to perform AI-driven health assessment.
  */
 export async function generateAIAnalysis(vitals: AIAnalysisRequest, profile: UserProfile | null): Promise<AIAnalysisResponse> {
-  const fn = httpsCallable(functions, "chronicAnalysis");
-  
-  // Ensure we don't send nulls for numeric fields that the backend expects as numbers
+  const url = import.meta.env.VITE_CHRONIC_ANALYSIS_URL || 'https://chronicanalysis-pfndekuqha-as.a.run.app';
+
   const payload = {
     systolic: vitals.systolic || 120,
     diastolic: vitals.diastolic || 80,
     glucose: vitals.glucose || 95,
     heartRate: vitals.heartRate || 72,
-    spo2: vitals.spo2 ?? 98, // Defaults to 98 if null or undefined
-    age: profile?.age ? Number(profile.age) : 25, // Providing defaults if missing
-    weight: profile?.weight ? Number(profile.weight) : 70,
-    height: profile?.height ? Number(profile.height) : 170
+    spo2: vitals.spo2 ?? 98,
+    age: (profile?.age && !isNaN(Number(profile.age)) && Number(profile.age) > 0) ? Number(profile.age) : 45,
+    weight: (profile?.weight && !isNaN(Number(profile.weight)) && Number(profile.weight) > 0) ? Number(profile.weight) : 75,
+    height: (profile?.height && !isNaN(Number(profile.height)) && Number(profile.height) > 0) ? Number(profile.height) : 175
   };
-  
-  const result = await fn(payload);
-  
-  return result.data as AIAnalysisResponse;
+
+  const authHeaders = await getAuthHeaders();
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      ...authHeaders
+    },
+    body: JSON.stringify({ data: payload })
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text().catch(() => 'No error body');
+    throw new Error(`AI analysis failed: ${response.status} ${response.statusText} - ${errorBody}`);
+  }
+
+  const data = await response.json();
+  return (data.result || data.data || data) as AIAnalysisResponse;
+}
+
+/**
+ * Calls the simple health analysis Cloud Run endpoint.
+ */
+export async function generateHealthAnalysis(vitals: AIAnalysisRequest): Promise<AIAnalysisResponse> {
+  const url = import.meta.env.VITE_HEALTH_ANALYSIS_URL || 'https://healthanalysis-pfndekuqha-as.a.run.app';
+
+  const authHeaders = await getAuthHeaders();
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      ...authHeaders
+    },
+    body: JSON.stringify({ data: vitals })
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text().catch(() => 'No error body');
+    throw new Error(`Health analysis failed: ${response.status} ${response.statusText} - ${errorBody}`);
+  }
+
+  const data = await response.json();
+  return (data.result || data.data || data) as AIAnalysisResponse;
 }

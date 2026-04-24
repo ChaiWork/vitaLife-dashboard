@@ -35,7 +35,14 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
-  const [formData, setFormData] = useState<Partial<UserProfile>>({});
+  const [formData, setFormData] = useState<Partial<UserProfile>>({
+    fullName: '',
+    gender: '',
+    age: '',
+    height: '',
+    weight: '',
+    role: 'patient'
+  });
 
   const handleSeed = async () => {
     if (!userId || isSeeding) return;
@@ -224,7 +231,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
               <div className="flex-1">
                 <p className="text-xs font-bold text-minimal-ink mb-1">Developer Seeding</p>
                 <p className="text-[11px] text-minimal-muted leading-relaxed mb-3">
-                  Generate 30 days of retrospective mock health data (Heart Rate, Vitals, BMI) for Chairis Pum to test longitudinal graph intelligence.
+                  Generate 30 days of retrospective mock health data (Heart Rate, Vitals, BMI) for {profile?.fullName || 'your account'} to test longitudinal graph intelligence.
                 </p>
                 <button 
                   onClick={handleSeed}

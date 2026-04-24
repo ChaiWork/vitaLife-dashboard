@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Users, AlertTriangle, Activity, Heart, Clock, ChevronRight, UserPlus } from 'lucide-react';
-import { FamilyLink } from '../../types';
-import { db, collection, query, orderBy, limit, onSnapshot } from '../../lib/firebase';
+import { FamilyLink, VulnerabilityAlert } from '../../types';
+import { db, collection, query, orderBy, limit, onSnapshot, doc } from '../../lib/firebase';
 
 interface CaregiverViewProps {
   familyLinks: FamilyLink[];
   onAddMember: () => void;
+  alerts?: VulnerabilityAlert[];
 }
 
-export const CaregiverView: React.FC<CaregiverViewProps> = ({ familyLinks, onAddMember }) => {
+export const CaregiverView: React.FC<CaregiverViewProps> = ({ familyLinks, onAddMember, alerts = [] }) => {
   return (
     <motion.div
       key="caregiver"
@@ -64,9 +65,42 @@ export const CaregiverView: React.FC<CaregiverViewProps> = ({ familyLinks, onAdd
           <h3 className="text-lg font-bold">Recent Vulnerability Alerts</h3>
         </div>
         <div className="space-y-4">
-          <p className="text-sm text-minimal-muted italic">
-            No critical alerts from family members in the last 24 hours.
-          </p>
+          {alerts.length > 0 ? (
+            alerts.map((alert) => (
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                key={alert.id} 
+                className="flex flex-col md:flex-row md:items-center justify-between p-5 bg-rose-50/40 border border-rose-100/50 rounded-3xl gap-4 hover:bg-rose-50/60 transition-colors group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-rose-500 text-white flex items-center justify-center shadow-lg shadow-rose-500/20 group-hover:scale-105 transition-transform">
+                    <AlertTriangle size={24} />
+                  </div>
+                  <div>
+                    <h4 className="font-display font-bold text-minimal-ink text-lg">{alert.patientFullName}</h4>
+                    <div className="flex items-center gap-2">
+                       <span className="text-[10px] font-black text-rose-600 uppercase tracking-[0.2em]">{alert.alertType.replace('_', ' ')}</span>
+                       <div className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+                       <span className="text-[10px] font-black text-rose-600 uppercase tracking-[0.2em]">{alert.status}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="md:text-right shrink-0">
+                  <p className="text-sm font-bold text-minimal-ink">
+                    {(alert.createdAt || alert.timestamp)?.toDate ? (alert.createdAt || alert.timestamp).toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Just now'}
+                  </p>
+                  <p className="text-[10px] font-bold text-minimal-muted uppercase tracking-[0.2em]">
+                    {(alert.createdAt || alert.timestamp)?.toDate ? (alert.createdAt || alert.timestamp).toDate().toLocaleDateString() : ''}
+                  </p>
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            <p className="text-sm text-minimal-muted italic px-2">
+              No critical alerts from family members in the last 24 hours.
+            </p>
+          )}
         </div>
       </div>
     </motion.div>
@@ -75,9 +109,21 @@ export const CaregiverView: React.FC<CaregiverViewProps> = ({ familyLinks, onAdd
 
 const MemberCard: React.FC<{ member: FamilyLink }> = ({ member }) => {
   const [stats, setStats] = useState<{ heartRate: number | null; steps: number; isInactive: boolean; } | null>(null);
+  const [memberProfile, setMemberProfile] = useState<{ fullName?: string; displayName?: string } | null>(null);
 
   useEffect(() => {
     if (!member.memberUid) return;
+
+    // Listen to member's specific profile for fresh names
+    const profileUnsubscribe = onSnapshot(doc(db, 'users', member.memberUid), (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        setMemberProfile({
+          fullName: data.fullName,
+          displayName: data.displayName
+        });
+      }
+    });
 
     const q = query(
       collection(db, 'users', member.memberUid, 'heart_rate_logs'),
@@ -105,9 +151,13 @@ const MemberCard: React.FC<{ member: FamilyLink }> = ({ member }) => {
       setStats({ heartRate: 72, steps: 2394, isInactive: false });
     });
 
-    return () => unsubscribe();
+    return () => {
+      profileUnsubscribe();
+      unsubscribe();
+    };
   }, [member.memberUid]);
 
+  const displayName = memberProfile?.fullName || memberProfile?.displayName || member.displayName;
   const hr = stats?.heartRate || '--';
   const steps = stats?.steps || 0;
   const status = stats?.isInactive ? 'Inactive' : 'Active Now';
@@ -121,10 +171,10 @@ const MemberCard: React.FC<{ member: FamilyLink }> = ({ member }) => {
       <div className="flex items-start justify-between mb-6 relative z-10">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-minimal-bg flex items-center justify-center text-minimal-ink font-display font-bold text-2xl shadow-inner border border-white/40 ring-2 ring-minimal-blue/5 group-hover:scale-105 transition-transform">
-            {member.displayName.charAt(0)}
+            {displayName.charAt(0)}
           </div>
           <div>
-            <h4 className="font-display font-bold text-minimal-ink group-hover:text-minimal-blue transition-colors text-lg">{member.displayName}</h4>
+            <h4 className="font-display font-bold text-minimal-ink group-hover:text-minimal-blue transition-colors text-lg">{displayName}</h4>
             <div className="flex items-center gap-1.5 opacity-60">
               <Clock size={10} className="text-minimal-muted" />
               <p className="text-[10px] font-bold uppercase tracking-widest text-minimal-muted">{member.relation || 'Member'}</p>

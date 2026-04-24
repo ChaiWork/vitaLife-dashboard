@@ -46,7 +46,17 @@ export const ChronicAIAnalysis: React.FC<ChronicAIAnalysisProps> = ({ analysis, 
               <Brain size={20} />
             </div>
             <div>
-              <h3 className="font-bold text-xl text-minimal-ink tracking-tight">Chronic Vitals Analysis</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-xl text-minimal-ink tracking-tight">Chronic Vitals Analysis</h3>
+                <button 
+                  onClick={onAnalyze}
+                  disabled={isAnalyzing}
+                  className="p-1.5 hover:bg-minimal-blue/10 rounded-lg transition-colors disabled:opacity-50"
+                  title="Run Chronic Analysis"
+                >
+                  <Activity size={16} className={`text-minimal-blue ${isAnalyzing ? 'animate-pulse' : ''}`} />
+                </button>
+              </div>
               <p className="text-xs text-minimal-muted">AI-driven metabolic & hypertension assessment</p>
             </div>
           </div>

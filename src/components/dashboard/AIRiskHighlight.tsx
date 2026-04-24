@@ -1,5 +1,5 @@
 import React from 'react';
-import { Stethoscope, Sparkles, AlertCircle } from 'lucide-react';
+import { Stethoscope, Sparkles, AlertCircle, Activity } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface AIRiskHighlightProps {
@@ -60,9 +60,19 @@ export const AIRiskHighlight: React.FC<AIRiskHighlightProps> = ({
             <div className="p-2 bg-white/20 backdrop-blur-md rounded-2xl ring-1 ring-white/30">
               <Sparkles className="text-white" size={20} />
             </div>
-            <h2 className="text-2xl font-display font-bold tracking-tight text-white flex items-center gap-3">
+            <h2 className="text-2xl font-display font-bold tracking-tight text-white flex items-center gap-2">
               Heart Intelligence
-              {isAnalyzing && (
+              {onRefresh && (
+                <button 
+                  onClick={onRefresh}
+                  disabled={isAnalyzing}
+                  className="p-1.5 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50"
+                  title="Run Heart Analysis"
+                >
+                  <Activity size={16} className={`text-white/80 ${isAnalyzing ? 'animate-pulse' : ''}`} />
+                </button>
+              )}
+              {isAnalyzing && !onRefresh && (
                 <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" />
               )}
             </h2>

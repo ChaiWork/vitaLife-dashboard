@@ -18,7 +18,8 @@ import {
   RiskEntry,
   AuthUser,
   BMILog,
-  GraphAIHistory
+  GraphAIHistory,
+  VulnerabilityAlert
 } from '../types';
 
 export function useHealthData(user: AuthUser | null) {
@@ -32,6 +33,7 @@ export function useHealthData(user: AuthUser | null) {
   const [bmiLogs, setBmiLogs] = useState<BMILog[]>([]);
   const [chronicInsights, setChronicInsights] = useState<AIInsight[]>([]);
   const [graphAIHistory, setGraphAIHistory] = useState<GraphAIHistory[]>([]);
+  const [vulnerabilityAlerts, setVulnerabilityAlerts] = useState<VulnerabilityAlert[]>([]);
 
   // Listen for Heart Rate Logs
   useEffect(() => {
@@ -70,6 +72,8 @@ export function useHealthData(user: AuthUser | null) {
       // Sort client-side by hour to ensure chronological breakdown display without requiring a composite index
       const sortedLogs = [...logs].sort((a, b) => a.hour - b.hour);
       setBreakdownLogs(sortedLogs);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/heart_rate_breakdown`);
     });
     return () => unsubscribe();
   }, [user]);
@@ -98,6 +102,8 @@ export function useHealthData(user: AuthUser | null) {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const insights = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as AIInsight));
       setAiInsights(insights);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/ai_insights`);
     });
     return () => unsubscribe();
   }, [user]);
@@ -105,10 +111,21 @@ export function useHealthData(user: AuthUser | null) {
   // Listen for Notifications
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, 'users', user.uid, 'notifications'), orderBy('createdAt', 'desc'), limit(20));
+    const q = query(
+      collection(db, 'users', user.uid, 'notifications'), 
+      limit(20)
+    );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Notification));
-      setNotifications(data);
+      // Sort client-side to avoid index requirement
+      const sortedData = [...data].sort((a, b) => {
+        const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+        const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+        return timeB - timeA;
+      });
+      setNotifications(sortedData);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/notifications`);
     });
     return () => unsubscribe();
   }, [user]);
@@ -120,6 +137,8 @@ export function useHealthData(user: AuthUser | null) {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as FamilyLink));
       setFamilyLinks(data);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/family_links`);
     });
     return () => unsubscribe();
   }, [user]);
@@ -127,10 +146,22 @@ export function useHealthData(user: AuthUser | null) {
   // Listen for Risk History
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, 'risk_history'), where('uid', '==', user.uid), orderBy('date', 'desc'), limit(50));
+    const q = query(
+      collection(db, 'risk_history'), 
+      where('uid', '==', user.uid), 
+      limit(50)
+    );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as RiskEntry));
-      setRiskHistory(data);
+      // Sort client-side by date/time to avoid composite index requirement
+      const sortedData = [...data].sort((a, b) => {
+        const timeA = a.time?.toDate ? a.time.toDate().getTime() : 0;
+        const timeB = b.time?.toDate ? b.time.toDate().getTime() : 0;
+        return timeB - timeA;
+      });
+      setRiskHistory(sortedData);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `risk_history`);
     });
     return () => unsubscribe();
   }, [user]);
@@ -146,6 +177,8 @@ export function useHealthData(user: AuthUser | null) {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const logs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as BMILog));
       setBmiLogs(logs);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/bmi_logs`);
     });
     return () => unsubscribe();
   }, [user]);
@@ -161,6 +194,8 @@ export function useHealthData(user: AuthUser | null) {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const insights = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as AIInsight));
       setChronicInsights(insights);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/chronic_vitals_insights`);
     });
     return () => unsubscribe();
   }, [user]);
@@ -176,7 +211,53 @@ export function useHealthData(user: AuthUser | null) {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const logs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as GraphAIHistory));
       setGraphAIHistory(logs);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/graph_ai_history`);
     });
+    return () => unsubscribe();
+  }, [user]);
+
+  // Listen for Vulnerability Alerts (Caregiver only)
+  useEffect(() => {
+    if (!user) {
+      setVulnerabilityAlerts([]);
+      return;
+    }
+    
+    const q = query(
+      collection(db, 'vulnerability_alerts'),
+      where('caregiverId', '==', user.uid),
+      limit(50)
+    );
+    
+    console.log(`Setting up real-time vulnerability listener for caregiver: ${user.uid}`);
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const now = Date.now();
+      const twentyFourHours = 24 * 60 * 60 * 1000;
+      
+      console.log(`Received ${snapshot.docs.length} raw alerts from Firestore.`);
+
+      const alerts = snapshot.docs
+        .map(d => ({ id: d.id, ...d.data() } as VulnerabilityAlert))
+        .filter(a => {
+          const dateRef = a.createdAt || a.timestamp;
+          const time = dateRef?.toDate ? dateRef.toDate().getTime() : (dateRef ? new Date(dateRef).getTime() : 0);
+          const isRecent = (now - time) < twentyFourHours;
+          return isRecent;
+        })
+        .sort((a, b) => {
+          const timeA = (a.createdAt || a.timestamp)?.toDate ? (a.createdAt || a.timestamp).toDate().getTime() : 0;
+          const timeB = (b.createdAt || b.timestamp)?.toDate ? (b.createdAt || b.timestamp).toDate().getTime() : 0;
+          return timeB - timeA;
+        });
+      
+      console.log(`Filtered to ${alerts.length} recent alerts (last 24h).`);
+      setVulnerabilityAlerts(alerts);
+    }, (error) => {
+      console.warn('Vulnerability alerts real-time fetch failed:', error);
+    });
+    
     return () => unsubscribe();
   }, [user]);
 
@@ -190,6 +271,7 @@ export function useHealthData(user: AuthUser | null) {
     riskHistory,
     bmiLogs,
     chronicInsights,
-    graphAIHistory
+    graphAIHistory,
+    vulnerabilityAlerts
   };
 }

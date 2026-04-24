@@ -43,7 +43,8 @@ export interface RiskEntry {
   id: string;
   uid: string;
   date: string;
-  riskLevel: 'low' | 'moderate' | 'high' | 'critical';
+  time?: any; // Added for client-side sorting
+  riskLevel: 'Low' | 'Moderate' | 'High' | 'Critical' | 'low' | 'moderate' | 'high' | 'critical';
   summary: string;
   advice: string;
 }
@@ -95,6 +96,17 @@ export interface GraphAIHistory {
   advice: string;
   trends: { label: string; change: number; trend: string }[];
   createdAt: any;
+}
+
+export interface VulnerabilityAlert {
+  id: string;
+  patientId: string;
+  patientFullName: string;
+  caregiverId: string;
+  alertType: string;
+  status: "critical" | "warning";
+  createdAt: any;
+  timestamp?: any; // Keeping for compatibility temporarily
 }
 
 export type AuthUser = User;

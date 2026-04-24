@@ -87,6 +87,20 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["memberUid", "email", "status"]
+    },
+    "VulnerabilityAlert": {
+      "title": "Vulnerability Alert",
+      "description": "Critical alerts (e.g. SOS) linked between a patient and a caregiver.",
+      "type": "object",
+      "properties": {
+        "patientId": { "type": "string" },
+        "patientFullName": { "type": "string" },
+        "caregiverId": { "type": "string" },
+        "alertType": { "type": "string" },
+        "status": { "type": "string", "enum": ["critical", "warning"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["patientId", "patientFullName", "caregiverId", "alertType", "status", "createdAt"]
     }
   },
   "firestore": {
@@ -113,6 +127,10 @@
     "/users/{userId}/family_links/{linkId}": {
       "schema": "FamilyLink",
       "description": "Trusted family members who receive emergency notifications."
+    },
+    "/vulnerability_alerts/{alertId}": {
+      "schema": "VulnerabilityAlert",
+      "description": "Real-time critical alerts shared between patients and caregivers."
     }
   }
 }

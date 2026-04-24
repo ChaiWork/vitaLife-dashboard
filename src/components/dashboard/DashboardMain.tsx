@@ -53,7 +53,7 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ user, profile }) =
     showNoDataPopup, setShowNoDataPopup,
     isAddingMember, setIsAddingMember,
     isManualEntryOpen, setIsManualEntryOpen,
-    isClearingAll,
+    isClearingAll, setIsClearingAll,
     manualVitals, setManualVitals,
     newMemberEmail, setNewMemberEmail,
     familyLinkStatus, setFamilyLinkStatus,
@@ -61,14 +61,16 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ user, profile }) =
     lastAnalysisTime,
     todayStats, dailyBreakdown, periodicTrends, unifiedHistory,
     heartLogs, chronicLogs, bmiLogs, aiInsights, chronicles, graphAIHistory,
-    notifications, familyLinks, riskHistory,
+    notifications, familyLinks, riskHistory, vulnerabilityAlerts,
+    generateHeartAnalysis,
     generateChronicAnalysis,
     saveManualVitals,
     simulateHeartRate,
     updateProfile,
     addFamilyMember,
     clearAllNotifications,
-    deleteGraphAIHistory
+    deleteGraphAIHistory,
+    triggerSOS
   } = controller;
 
   const findNearestClinic = () => {
@@ -80,7 +82,9 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ user, profile }) =
   };
 
   const refreshData = () => {
-    // Only chronic analysis reloads from the website
+    // Generate fresh heart rate analysis (Heart Intelligence)
+    generateHeartAnalysis();
+    // Also trigger chronic vitals analysis
     generateChronicAnalysis();
   };
 
@@ -120,6 +124,7 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ user, profile }) =
             onRefresh={refreshData}
             onManualLog={() => setIsManualEntryOpen(true)}
             onSimulateLog={simulateHeartRate}
+            onSOS={triggerSOS}
           />
 
           <NotificationPanel 
@@ -129,7 +134,7 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ user, profile }) =
             onClose={() => setIsNotificationOpen(false)}
             onDelete={(id) => deleteDoc(doc(db, 'users', user.uid, 'notifications', id))}
             onClearAll={clearAllNotifications}
-            setIsClearingAll={() => {}} // Controlled by hook
+            setIsClearingAll={setIsClearingAll}
             onFindClinic={findNearestClinic}
           />
 
@@ -142,6 +147,7 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ user, profile }) =
                   summary={aiInsights[0]?.summary || 'Heart Intelligence: Your vital signs are generally within healthy ranges.'}
                   advice={aiInsights[0]?.advice || 'Precision Advice: Maintain optimal hydration.'}
                   isAnalyzing={isAnalyzing}
+                  onRefresh={generateHeartAnalysis}
                   onFindClinic={findNearestClinic}
                 />
                 <ChronicAIAnalysis 
@@ -170,6 +176,7 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ user, profile }) =
               <CaregiverView 
                 familyLinks={familyLinks} 
                 onAddMember={() => setActiveTab('profile')} 
+                alerts={vulnerabilityAlerts}
               />
             )}
 
@@ -180,7 +187,12 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ user, profile }) =
               />
             )}
 
-            {activeTab === 'history' && <HistoryTab history={unifiedHistory} />}
+            {activeTab === 'history' && (
+              <HistoryTab 
+                history={unifiedHistory} 
+                onDelete={controller.deleteUnifiedHistory}
+              />
+            )}
 
             {activeTab === 'profile' && (
               <ProfileTab 
@@ -219,7 +231,12 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ user, profile }) =
 
       <NoDataModal 
         isOpen={showNoDataPopup} 
-        onClose={() => setShowNoDataPopup(false)} 
+        onClose={() => {
+          setShowNoDataPopup(false);
+          controller.setAnalysisMessage(null);
+        }} 
+        title={controller.analysisMessage ? "Outdated Health Data" : undefined}
+        message={controller.analysisMessage || undefined}
       />
 
       <div className="fixed bottom-8 right-8 z-50">
