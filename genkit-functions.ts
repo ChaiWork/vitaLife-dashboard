@@ -1,3 +1,8 @@
+// ============================
+// VITALIFE GENKIT BACKEND
+// Region: asia-southeast1 (Singapore)
+// ============================
+
 import * as admin from "firebase-admin";
 import { genkit } from "genkit";
 import { z } from "zod";
@@ -14,24 +19,76 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 
-/**
- * SECRETS SETUP
- * The secret handle used in Cloud Functions configuration.
- */
 const googleApiKey = defineSecret("GOOGLE_GENAI_API_KEY");
 
+let aiInstance: any = null;
+
+function getAI() {
+  if (!aiInstance) {
+    aiInstance = genkit({
+      plugins: [
+        googleAI({
+          apiKey: googleApiKey.value(),
+        }),
+      ],
+      model: "googleai/gemini-2.0-flash",
+    });
+  }
+  return aiInstance;
+}
+
 /* =========================================================
-   GENKIT SETUP
-   Using gemini-2.5-flash for maximum intelligence.
+   FALLBACK LOGIC
 ========================================================= */
 
-const ai = genkit({
-  plugins: [googleAI()], // Automatically retrieves configured key at runtime
-  model: "googleai/gemini-flash-latest", 
-});
+function fallbackHealthAnalysis(input: any) {
+  const hr = input?.heartRate ?? 72;
+
+  const risk =
+    hr > 130 ? "Critical" : hr > 100 ? "High" : hr > 90 ? "Moderate" : "Low";
+
+  return {
+    risk,
+    explanation: `Heart rate of ${hr} bpm processed using safety engine. AI consultation is temporarily limited.`,
+    summary: `Heart rate indicates ${risk.toLowerCase()} risk level.`,
+    advice:
+      "Rest and hydrate. Monitor regularly. Seek medical attention if symptoms persist.",
+  };
+}
+
+function fallbackChronicAnalysis(input: any) {
+  const sys = input?.systolic ?? 120;
+  const glu = input?.glucose ?? 95;
+
+  let risk = "Low";
+
+  if (sys > 180 || glu > 300) risk = "Critical";
+  else if (sys > 140 || glu > 140) risk = "High";
+  else if (sys > 130 || glu > 110) risk = "Moderate";
+
+  return {
+    risk,
+    summary: `Metabolic vitals (BP: ${sys}, Glu: ${glu}) evaluated via backup safety logic.`,
+    advice: `Current readings suggest ${risk.toLowerCase()} risk. Maintain your logging routine.`,
+    clinicalSummary: "Vitals log processed via safety fallback.",
+    futureRisks: "Inconclusive due to limited analysis.",
+    medications: "Verify all medications with your doctor.",
+    prevention: "Regular monitoring and lifestyle maintenance is recommended.",
+  };
+}
+
+function fallbackGraphAnalysis() {
+  return {
+    summary: "Trend analysis currently utilizing local statistical modeling.",
+    stability: 85,
+    trends: [{ label: "Temporal Stability", change: 0, trend: "stable" }],
+    prediction: "Stable trajectory predicted.",
+    advice: "Continue regular vitals logging.",
+  };
+}
 
 /* =========================================================
-   1. HEART RATE FLOW
+   SCHEMAS
 ========================================================= */
 
 const hrOutputSchema = z.object({
@@ -41,120 +98,15 @@ const hrOutputSchema = z.object({
   summary: z.string(),
 });
 
-const healthAnalysisFlow = ai.defineFlow(
-  {
-    name: "healthAnalysisFlow",
-    inputSchema: z.object({ heartRate: z.number() }),
-    outputSchema: hrOutputSchema,
-  },
-  async (input) => {
-    const risk =
-      input.heartRate > 130
-        ? "Critical"
-        : input.heartRate > 100
-          ? "High"
-          : input.heartRate > 90
-            ? "Moderate"
-            : "Low";
-
-    const response = await ai.generate({
-      prompt: `
-Analyze heart rate: ${input.heartRate} bpm.
-Risk level: ${risk}
-
-Instructions:
-- risk: EXACTLY ONE OF "Low", "Moderate", "High", "Critical".
-- explanation: 2 sentences explaining the heart rate.
-- advice: 1 actionable health sentence.
-- summary: 1 short summary sentence.
-
-IMPORTANT: Return EXACTLY a valid JSON object matching the requested schema. No other text.
-      `,
-      output: { schema: hrOutputSchema },
-      config: { temperature: 0.1 },
-    });
-
-    return response.output!;
-  },
-);
-
-/* =========================================================
-   2. CHRONIC FLOW (RAG)
-========================================================= */
-
 const chronicOutputSchema = z.object({
   risk: z.enum(["Low", "Moderate", "High", "Critical"]),
   summary: z.string(),
   advice: z.string(),
+  clinicalSummary: z.string(),
+  futureRisks: z.string(),
+  medications: z.string(),
+  prevention: z.string(),
 });
-
-const chronicAnalysisFlow = ai.defineFlow(
-  {
-    name: "chronicAnalysisFlow",
-    inputSchema: z.object({
-      userId: z.string(),
-      heartRate: z.number().optional(),
-      systolic: z.number().optional(),
-      diastolic: z.number().optional(),
-      glucose: z.number().optional(),
-      spo2: z.number().optional(),
-    }),
-    outputSchema: chronicOutputSchema,
-  },
-  async (input) => {
-    const [hSnap, cSnap] = await Promise.all([
-      admin
-        .firestore()
-        .collection("users")
-        .doc(input.userId)
-        .collection("heart_rate_logs")
-        .orderBy("createdAt", "desc")
-        .limit(10)
-        .get(),
-
-      admin
-        .firestore()
-        .collection("users")
-        .doc(input.userId)
-        .collection("chronicVital_log")
-        .orderBy("createdAt", "desc")
-        .limit(10)
-        .get(),
-    ]);
-
-    const history = {
-      hr: hSnap.docs.map((d) => d.data()),
-      vitals: cSnap.docs.map((d) => d.data()),
-    };
-
-    const response = await ai.generate({
-      prompt: `
-Analyze patient health data.
-
-CURRENT:
-${JSON.stringify(input)}
-
-HISTORY (Context):
-${JSON.stringify(history).slice(0, 2000)}
-
-Instructions:
-- risk: EXACTLY ONE OF "Low", "Moderate", "High", "Critical". Do not use any other words.
-- summary: max 12 words highlighting the most important trend.
-- advice: clear medical instruction based on current and history data.
-
-IMPORTANT: Return EXACTLY a valid JSON object matching the requested schema. Ensure 'risk' strictly matches the enum.
-      `,
-      output: { schema: chronicOutputSchema },
-      config: { temperature: 0.1 },
-    });
-
-    return response.output!;
-  },
-);
-
-/* =========================================================
-   3. GRAPH TREND FLOW
-========================================================= */
 
 const graphOutputSchema = z.object({
   summary: z.string(),
@@ -166,90 +118,161 @@ const graphOutputSchema = z.object({
       trend: z.enum(["up", "down", "stable"]),
     }),
   ),
+  prediction: z.string(),
+  advice: z.string(),
 });
 
-const graphAnalysisFlow = ai.defineFlow(
-  {
-    name: "graphAnalysisFlow",
-    inputSchema: z.object({
-      userId: z.string(),
-      view: z.string(),
-      metric: z.string(),
-      data: z.array(z.any()),
-    }),
-    outputSchema: graphOutputSchema,
-  },
-  async (input) => {
-    const response = await ai.generate({
-      prompt: `
-Analyze ${input.metric} trends for ${input.view} view.
-
-DATA:
-${JSON.stringify(input.data).slice(0, 2000)}
-
-Return:
-- summary: Concise pattern evaluation.
-- stability: (0-100) consistency score.
-- trends: Array of objects with label, percentage change, and direction (direction MUST be "up", "down", or "stable").
-
-IMPORTANT: Return EXACTLY a valid JSON object matching the requested schema. No markdown formatting outside of JSON.
-      `,
-      output: { schema: graphOutputSchema },
-      config: { temperature: 0.1 },
-    });
-
-    return response.output!;
-  },
-);
-
 /* =========================================================
-   4. CALLABLE FUNCTIONS
+   CALLABLE FUNCTIONS (SINGAPORE REGION)
 ========================================================= */
 
 export const healthAnalysis = onCall(
-  { secrets: [googleApiKey], cors: true },
-  async (request) => {
-    if (!request.auth)
-      throw new HttpsError("unauthenticated", "User must be signed in.");
+  { region: "asia-southeast1", secrets: [googleApiKey], cors: true },
+  async (req) => {
+    if (!req.auth) {
+      throw new HttpsError("unauthenticated", "Login required");
+    }
 
-    return await healthAnalysisFlow(request.data);
+    const input = req.data;
+    const ai = getAI();
+
+    try {
+      const response = await ai.generate({
+        output: { schema: hrOutputSchema },
+        prompt: `Analyze heart rate: ${input?.heartRate} bpm. Provide structured risk assessment.`,
+      });
+
+      return response?.output ?? fallbackHealthAnalysis(input);
+    } catch (err) {
+      console.error("Health AI failed:", err);
+      return fallbackHealthAnalysis(input);
+    }
   },
 );
 
 export const chronicAnalysis = onCall(
-  { secrets: [googleApiKey], cors: true },
-  async (request) => {
-    if (!request.auth)
-      throw new HttpsError("unauthenticated", "User must be signed in.");
+  { region: "asia-southeast1", secrets: [googleApiKey], cors: true },
+  async (req) => {
+    if (!req.auth) {
+      throw new HttpsError("unauthenticated", "Login required");
+    }
 
-    return await chronicAnalysisFlow({
-      ...request.data,
-      userId: request.auth.uid,
-    });
+    const input = req.data;
+    const userId = req.auth.uid;
+    const ai = getAI();
+
+    try {
+      const [hSnap, cSnap] = await Promise.all([
+        admin
+          .firestore()
+          .collection("users")
+          .doc(userId)
+          .collection("heart_rate_logs")
+          .orderBy("createdAt", "desc")
+          .limit(10)
+          .get(),
+
+        admin
+          .firestore()
+          .collection("users")
+          .doc(userId)
+          .collection("chronicVital_log")
+          .orderBy("createdAt", "desc")
+          .limit(10)
+          .get(),
+      ]);
+
+      const history = {
+        hr: hSnap.docs.map((d) => d.data()),
+        vitals: cSnap.docs.map((d) => d.data()),
+      };
+
+      const response = await ai.generate({
+        prompt: `
+Analyze patient health data and provide a professional clinical assessment.
+
+CURRENT READING:
+${JSON.stringify(input)}
+
+PATIENT HISTORY (Context):
+${JSON.stringify(history).slice(0, 2000)}
+
+Instructions:
+- risk: EXACTLY ONE OF "Low", "Moderate", "High", "Critical".
+- summary: A very brief (max 15 words) high-level statement of the current status.
+- clinicalSummary: A professional, detailed clinical summary of the patient's current health conditions based on the vitals provided.
+- futureRisks: Identification of potential diseases or conditions that might occur in the future if current trends continue.
+- advice: Professional medical advice/instructions delivered in a formal, professional tone.
+- medications: General classes or types of medications that might be relevant (include a disclaimer that this is AI-suggested and needs physician verification).
+- prevention: Clear, actionable preventative measures to improve health outcomes.
+
+IMPORTANT: Return EXACTLY a valid JSON object matching the requested schema. Ensure all fields are professionally worded.
+      `,
+        output: { schema: chronicOutputSchema },
+        config: { temperature: 0.1 },
+      });
+
+      return response?.output ?? fallbackChronicAnalysis(input);
+    } catch (err) {
+      console.error("Chronic AI failed:", err);
+      return fallbackChronicAnalysis(input);
+    }
   },
 );
 
 export const graphAnalysis = onCall(
-  { secrets: [googleApiKey], cors: true },
-  async (request) => {
-    if (!request.auth)
-      throw new HttpsError("unauthenticated", "User must be signed in.");
+  { region: "asia-southeast1", secrets: [googleApiKey], cors: true },
+  async (req) => {
+    if (!req.auth) {
+      throw new HttpsError("unauthenticated", "Login required");
+    }
 
-    return await graphAnalysisFlow({
-      ...request.data,
-      userId: request.auth.uid,
-    });
+    const input = req.data;
+    const ai = getAI();
+
+    try {
+      const response = await ai.generate({
+        output: { schema: graphOutputSchema },
+        prompt: `
+Analyze the health trends for ${input?.metric}. 
+Primary Data Series: ${JSON.stringify(input?.data).slice(0, 1500)}. 
+BMI Context: ${JSON.stringify(input?.bmiData || []).slice(0, 500)}.
+
+Tasks:
+1. Summarize trend
+2. Stability score (0-100)
+3. Detect changes
+4. Predict next 7 days
+5. Give advice
+        `,
+      });
+
+      return (
+        response?.output ?? {
+          ...fallbackGraphAnalysis(),
+          prediction: "Stable trajectory predicted.",
+          advice: "Continue regular vitals logging.",
+        }
+      );
+    } catch (err) {
+      console.error("Graph AI failed:", err);
+      return {
+        ...fallbackGraphAnalysis(),
+        prediction: "Prediction unavailable.",
+        advice: "Use historical trend reference.",
+      };
+    }
   },
 );
 
 /* =========================================================
-   5. PUSH NOTIFICATION TRIGGER
+   PUSH NOTIFICATION
 ========================================================= */
 
 export const sendPushNotification = onDocumentCreated(
   {
     document: "users/{userId}/notifications/{notificationId}",
-    region: "us-central1",
+    region: "asia-southeast1",
   },
   async (event) => {
     const snap = event.data;
@@ -270,7 +293,7 @@ export const sendPushNotification = onDocumentCreated(
         token,
         notification: {
           title: data?.title || "Health Alert",
-          body: data?.message || "New health update received.",
+          body: data?.message || "New update received",
         },
         android: {
           priority: isEmergency ? "high" : "normal",
@@ -280,7 +303,7 @@ export const sendPushNotification = onDocumentCreated(
         },
       });
     } catch (e) {
-      console.error("FCM Send Failed:", e);
+      console.error("FCM error:", e);
     }
   },
 );

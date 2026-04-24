@@ -26,6 +26,10 @@ export interface AIAnalysisResponse {
   risk: "Low" | "Moderate" | "High" | "Critical";
   summary: string;
   advice: string;
+  clinicalSummary?: string;
+  futureRisks?: string;
+  medications?: string;
+  prevention?: string;
 }
 
 export interface GraphAnalysisRequest {

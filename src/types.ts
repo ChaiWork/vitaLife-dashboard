@@ -47,6 +47,10 @@ export interface RiskEntry {
   riskLevel: 'Low' | 'Moderate' | 'High' | 'Critical' | 'low' | 'moderate' | 'high' | 'critical';
   summary: string;
   advice: string;
+  clinicalSummary?: string;
+  futureRisks?: string;
+  medications?: string;
+  prevention?: string;
 }
 
 export interface AIInsight {
@@ -55,6 +59,10 @@ export interface AIInsight {
   risk: string;
   summary: string;
   advice: string;
+  clinicalSummary?: string;
+  futureRisks?: string;
+  medications?: string;
+  prevention?: string;
   date: any;
   createdAt: any;
 }

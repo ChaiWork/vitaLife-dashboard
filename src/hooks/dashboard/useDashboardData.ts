@@ -180,6 +180,10 @@ export function useDashboardData({
       risk: entry.riskLevel,
       summary: entry.summary,
       advice: entry.advice,
+      clinicalSummary: entry.clinicalSummary,
+      futureRisks: entry.futureRisks,
+      medications: entry.medications,
+      prevention: entry.prevention,
       heartRate: null,
       source: 'Chronic Analysis'
     }));
@@ -193,6 +197,10 @@ export function useDashboardData({
         risk: insight.risk,
         summary: insight.summary,
         advice: insight.advice,
+        clinicalSummary: insight.clinicalSummary,
+        futureRisks: insight.futureRisks,
+        medications: insight.medications,
+        prevention: insight.prevention,
         heartRate: insight.heartRate,
         source: 'Heart AI'
       };
@@ -207,6 +215,10 @@ export function useDashboardData({
           risk: insight.risk,
           summary: insight.summary,
           advice: insight.advice,
+          clinicalSummary: insight.clinicalSummary,
+          futureRisks: insight.futureRisks,
+          medications: insight.medications,
+          prevention: insight.prevention,
           heartRate: null,
           source: 'Metabolic Insight'
         };

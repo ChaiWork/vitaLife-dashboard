@@ -58,7 +58,15 @@ export function useDashboardController(user: AuthUser, profile: UserProfile | nu
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const [familyLinkStatus, setFamilyLinkStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   const [isChronicAnalyzing, setIsChronicAnalyzing] = useState(false);
-  const [chronicAnalysis, setChronicAnalysis] = useState<{ risk: "Low" | "Moderate" | "High" | "Critical", summary: string, advice: string } | null>(null);
+  const [chronicAnalysis, setChronicAnalysis] = useState<{ 
+    risk: "Low" | "Moderate" | "High" | "Critical", 
+    summary: string, 
+    advice: string,
+    clinicalSummary?: string,
+    futureRisks?: string,
+    medications?: string,
+    prevention?: string
+  } | null>(null);
   const [analysisMessage, setAnalysisMessage] = useState<string | null>(null);
   const lastAlertedId = useRef<string | null>(null);
   const analyzedLogIds = useRef<Set<string>>(new Set());
@@ -236,6 +244,10 @@ export function useDashboardController(user: AuthUser, profile: UserProfile | nu
         riskLevel: result.risk,
         summary: result.summary,
         advice: result.advice,
+        clinicalSummary: result.clinicalSummary || '',
+        futureRisks: result.futureRisks || '',
+        medications: result.medications || '',
+        prevention: result.prevention || '',
         date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) + ' ' + new Date().toLocaleDateString(),
         time: serverTimestamp(),
         vitals: vitals,
